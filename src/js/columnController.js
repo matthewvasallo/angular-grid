@@ -78,7 +78,22 @@ ColumnController.prototype.setColumns = function(columnDefs) {
 
 // called by headerRenderer - when a header is opened or closed
 ColumnController.prototype.columnGroupOpened = function(group) {
-    group.expanded = !group.expanded;
+    this.setGroupOpened(group, !group.expanded);
+};
+
+ColumnController.prototype.setGroupOpened = function(group, open) {
+    group.expanded = open;
+    this.updateGroups();
+    this.updateVisibleColumns();
+    this.angularGrid.refreshHeaderAndBody();
+};
+
+// HB extension
+ColumnController.prototype.openCloseAllColumnGroups = function(open) {
+    var groups = this.columnGroups;
+    for (var i = 0; i < groups.length; i++) {
+        groups[i].expanded = open;
+    }
     this.updateGroups();
     this.updateVisibleColumns();
     this.angularGrid.refreshHeaderAndBody();

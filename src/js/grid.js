@@ -399,6 +399,9 @@ Grid.prototype.ensureIndexVisible = function(index) {
 Grid.prototype.addApi = function() {
     var that = this;
     var api = {
+        getColumnController: function() {
+            return that.columnController;
+        },
         setDatasource: function(datasource) {
             that.setDatasource(datasource);
         },
