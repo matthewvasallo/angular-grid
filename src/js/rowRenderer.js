@@ -250,6 +250,7 @@ RowRenderer.prototype.ensureRowsRendered = function() {
 
     var mainRowWidth = this.columnModel.getBodyContainerWidth();
     var that = this;
+    var rowsInserted = false;
 
     // at the end, this array will contain the items we need to remove
     var rowsToRemove = Object.keys(this.renderedRows);
@@ -265,11 +266,23 @@ RowRenderer.prototype.ensureRowsRendered = function() {
         var node = this.rowModel.getVirtualRow(rowIndex);
         if (node) {
             that.insertRow(node, rowIndex, mainRowWidth);
+            rowsInserted = true;
         }
     }
 
     // at this point, everything in our 'rowsToRemove' . . .
     this.removeVirtualRows(rowsToRemove);
+
+    //Notify outside world that dom rows changed.
+    if((rowsInserted || rowsToRemove.length > 0) && this.gridOptions.handleDOMRowChanges){
+        //get all currently rendered rows in dom.
+        var rowsInDOM = [];
+        Object.keys(that.renderedRows).forEach(function(key) {
+            rowsInDOM.push(that.renderedRows[key].node.data);
+        });
+
+        this.gridOptions.handleDOMRowChanges(rowsInDOM);
+    }
 
     // if we are doing angular compiling, then do digest the scope here
     if (this.gridOptionsWrapper.isAngularCompileRows()) {
