@@ -416,8 +416,19 @@ Grid.prototype.ensureIndexVisible = function(index) {
 Grid.prototype.addApi = function() {
     var that = this;
     var api = {
+        // HB Extension
         getColumnController: function() {
             return that.columnController;
+        },
+        // HB Extension
+        scrollToColumnIndex: function(colIndex) {
+            var columnModel = that.columnController.getModel();
+            var offset = columnModel.getOffsetForColumnIndex(colIndex);
+            var totalWidth = columnModel.getBodyContainerWidth();
+            if (offset + that.eBodyViewport.offsetWidth > totalWidth) {
+                offset = columnModel.getBodyContainerWidth() - that.eBodyViewport.offsetWidth;
+            }
+            that.eBodyViewport.scrollLeft = offset;
         },
         setDatasource: function(datasource) {
             that.setDatasource(datasource);

@@ -49,6 +49,21 @@ ColumnController.prototype.createModel = function() {
                 }
             }
         },
+        // HB extension
+        // used by:
+        // + grid -> scrollToColumnIndex
+        getOffsetForColumnIndex: function(colIndex) {
+            var offset = 0;
+            var min = Math.min(colIndex, that.columns.length);
+            for (var i = 0; i < min; i++) {
+                var col = that.columns[i];
+                if (!col.pinned && that.visibleColumns.indexOf(col) >= 0) {
+                    offset += col.actualWidth;
+                }
+            }
+
+            return offset;
+        },
         // used by:
         // + rowRenderer -> for navigation
         getVisibleColBefore: function(col) {
