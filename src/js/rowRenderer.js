@@ -1078,23 +1078,59 @@ RowRenderer.prototype.stopEditing = function(eGridCell, column, node, $childScop
     this.populateAndStyleGridCell(valueGetter, newValue, eGridCell, isFirstColumn, node, column, rowIndex, $childScope);
 };
 
+RowRenderer.prototype.useEditCellRenderer = function(column, node, $childScope, rowIndex, valueGetter) {
+    var colDef = column.colDef;
+    var rendererParams = {
+        value: valueGetter(),
+        valueGetter: valueGetter,
+        data: node.data,
+        node: node,
+        colDef: colDef,
+        column: column,
+        $scope: $childScope,
+        rowIndex: rowIndex,
+        api: this.gridOptionsWrapper.getApi(),
+        context: this.gridOptionsWrapper.getContext(),
+    };
+
+    var editRenderer = colDef.editCellRenderer;
+    var resultFromRenderer = editRenderer(rendererParams);
+
+    return resultFromRenderer;
+};
+
 RowRenderer.prototype.startEditing = function(eGridCell, column, node, $childScope, rowIndex, isFirstColumn, valueGetter) {
     var that = this;
     this.editingCell = true;
     utils.removeAllChildren(eGridCell);
-    var eInput = document.createElement('input');
-    eInput.type = 'text';
-    utils.addCssClass(eInput, 'ag-cell-edit-input');
+    var eInput, nodeToAppend;
 
-    if (valueGetter) {
-        var value = valueGetter();
-        if (value !== null && value !== undefined) {
-            eInput.value = value;
+    if (column.colDef.editCellRenderer) {
+        nodeToAppend = document.createElement('span');
+        var editCell = this.useEditCellRenderer(column, node, $childScope, rowIndex, valueGetter);
+        if (utils.isNodeOrElement(editCell)) {
+            nodeToAppend.appendChild(editCell)
+        } else {
+            nodeToAppend.innerHTML = editCell;
         }
+        eInput = nodeToAppend.querySelector('input');
+    } else {
+        eInput = document.createElement('input');
+        eInput.type = 'text';
+        nodeToAppend = eInput;
+        utils.addCssClass(eInput, 'ag-cell-edit-input');
+
+        if (valueGetter) {
+            var value = valueGetter();
+            if (value !== null && value !== undefined) {
+                eInput.value = value;
+            }
+        }
+
+        eInput.style.width = (column.actualWidth - 14) + 'px';
     }
 
-    eInput.style.width = (column.actualWidth - 14) + 'px';
-    eGridCell.appendChild(eInput);
+    eGridCell.appendChild(nodeToAppend);
     eInput.focus();
     eInput.select();
 
