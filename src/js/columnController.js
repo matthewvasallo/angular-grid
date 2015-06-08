@@ -109,6 +109,9 @@ ColumnController.prototype.setGroupOpened = function(group, open) {
     group.expanded = open;
     this.updateGroups();
     this.updateVisibleColumns();
+    if (this.groupListener) {
+        this.groupListener(group);
+    }
     this.angularGrid.refreshHeaderAndBody();
 };
 
@@ -121,6 +124,11 @@ ColumnController.prototype.openCloseAllColumnGroups = function(open) {
     this.updateGroups();
     this.updateVisibleColumns();
     this.angularGrid.refreshHeaderAndBody();
+};
+
+// HB extension
+ColumnController.prototype.registerGroupListener = function(listener) {
+    this.groupListener = listener;
 };
 
 // private
