@@ -430,6 +430,10 @@ Grid.prototype.addApi = function() {
             }
             that.eBodyViewport.scrollLeft = offset;
         },
+        // HB Extension
+        getBodyScrollLeft: function() {
+            return that.eBodyViewport.scrollLeft;
+        },
         setDatasource: function(datasource) {
             that.setDatasource(datasource);
         },
