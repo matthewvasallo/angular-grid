@@ -646,6 +646,13 @@ Grid.prototype.updatePinnedColContainerWidthAfterColResize = function() {
 
 Grid.prototype.setPinnedColContainerWidth = function() {
     var pinnedColWidth = this.columnModel.getPinnedContainerWidth() + "px";
+    var pinnedViewPortWidth = "";
+    if(this.gridOptionsWrapper.isPinnedColAutoExpandWidth() && this.columnController.visibleColumns[this.columnController.visibleColumns.length - 1].pinned)
+    {
+        pinnedColWidth = "99%";
+        pinnedViewPortWidth = "99.5%"
+    }
+    this.ePinnedColsViewport.style.width = pinnedViewPortWidth;
     this.ePinnedColsContainer.style.width = pinnedColWidth;
     this.eBodyViewportWrapper.style.marginLeft = pinnedColWidth;
 };

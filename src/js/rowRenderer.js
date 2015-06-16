@@ -273,15 +273,16 @@ RowRenderer.prototype.ensureRowsRendered = function() {
     // at this point, everything in our 'rowsToRemove' . . .
     this.removeVirtualRows(rowsToRemove);
 
+    var domRowsChangedFn = this.gridOptionsWrapper.getDOMRowsChangedHandler();
+
     //Notify outside world that dom rows changed.
-    if((rowsInserted || rowsToRemove.length > 0) && this.gridOptions.handleDOMRowChanges){
+    if((rowsInserted || rowsToRemove.length > 0) && domRowsChangedFn){
         //get all currently rendered rows in dom.
         var rowsInDOM = [];
         Object.keys(that.renderedRows).forEach(function(key) {
             rowsInDOM.push(that.renderedRows[key].node.data);
         });
-
-        this.gridOptions.handleDOMRowChanges(rowsInDOM);
+        domRowsChangedFn(rowsInDOM);
     }
 
     // if we are doing angular compiling, then do digest the scope here
