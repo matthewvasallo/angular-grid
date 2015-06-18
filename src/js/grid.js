@@ -421,6 +421,10 @@ Grid.prototype.addApi = function() {
             return that.columnController;
         },
         // HB Extension
+        getRowRenderer: function() {
+            return that.rowRenderer;
+        },
+        // HB Extension
         scrollToColumnIndex: function(colIndex) {
             var columnModel = that.columnController.getModel();
             var offset = columnModel.getOffsetForColumnIndex(colIndex);
