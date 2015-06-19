@@ -121,6 +121,15 @@ RowRenderer.prototype.softRefreshCell = function(eGridCell, isFirstColumn, node,
     }
 };
 
+RowRenderer.prototype.refreshByRowColumn = function(rowIndex, columnIndex) {
+    var renderedRow = this.renderedRows[rowIndex];
+    if (renderedRow) {
+        var column = this.columnModel.getVisibleColumns()[columnIndex];
+        var eGridCell = renderedRow.eCells[column.colKey];
+        this.softRefreshCell(eGridCell, columnIndex == 0, renderedRow.node, column, rowIndex, null);
+    }
+};
+
 RowRenderer.prototype.rowDataChanged = function(rows) {
     // we only need to be worried about rendered rows, as this method is
     // called to whats rendered. if the row isn't rendered, we don't care
