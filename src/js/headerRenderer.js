@@ -78,6 +78,11 @@ HeaderRenderer.prototype.createGroupedHeaderCell = function(group) {
     } else {
         classNames.push('ag-header-group-cell-no-group');
     }
+    if (group.expanded) {
+        classNames.push('ag-header-group-expanded');
+    } else {
+        classNames.push('ag-header-group-collapsed');
+    }
     eHeaderGroupCell.className = classNames.join(' ');
 
     if (this.gridOptionsWrapper.isEnableColResize()) {
