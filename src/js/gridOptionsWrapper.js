@@ -27,6 +27,7 @@ GridOptionsWrapper.prototype.isPinnedColAutoExpandWidth = function() { return is
 GridOptionsWrapper.prototype.getRowClass = function() { return this.gridOptions.rowClass; };
 GridOptionsWrapper.prototype.getGridOptions = function() { return this.gridOptions; };
 GridOptionsWrapper.prototype.getHeaderCellRenderer = function() { return this.gridOptions.headerCellRenderer; };
+GridOptionsWrapper.prototype.getGroupingArrowRenderer = function() { return this.gridOptions.groupingArrowRenderer; };
 GridOptionsWrapper.prototype.getApi = function() { return this.gridOptions.api; };
 GridOptionsWrapper.prototype.isEnableSorting = function() { return this.gridOptions.enableSorting; };
 GridOptionsWrapper.prototype.isEnableColResize = function() { return this.gridOptions.enableColResize; };
