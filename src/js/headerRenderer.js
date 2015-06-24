@@ -250,6 +250,16 @@ HeaderRenderer.prototype.createHeaderCell = function(column, grouped, headerGrou
         column.eSortAsc.style.display = 'none';
         column.eSortDesc.style.display = 'none';
         this.addSortHandling(headerCellLabel, column);
+    } else if (colDef.headerClickHandler) {
+        var params = {
+            colDef: colDef,
+            context: this.gridOptionsWrapper.getContext(),
+            api: this.gridOptionsWrapper.getApi()
+        };
+        headerCellLabel.addEventListener("click", function(e) {
+            params.event = e;
+            colDef.headerClickHandler(params);
+        });
     }
 
     // add in filter icon
