@@ -185,6 +185,35 @@ HeaderRenderer.prototype.insertHeadersWithoutGrouping = function() {
     });
 };
 
+// private
+HeaderRenderer.prototype.addHoverListener = function(colDef, headerCellLabel) {
+    var that = this;
+    if (colDef.headerHoverHandler) {
+        headerCellLabel.addEventListener("mouseenter", function (e) {
+            var hoverParams = {
+                colDef: colDef,
+                event: e,
+                entering: true,
+                leaving: false,
+                context: that.gridOptionsWrapper.getContext(),
+                api: that.gridOptionsWrapper.getApi()
+            };
+            colDef.headerHoverHandler(hoverParams);
+        });
+        headerCellLabel.addEventListener("mouseleave", function (e) {
+            var hoverParams = {
+                colDef: colDef,
+                event: e,
+                entering: false,
+                leaving: true,
+                context: that.gridOptionsWrapper.getContext(),
+                api: that.gridOptionsWrapper.getApi()
+            };
+            colDef.headerHoverHandler(hoverParams);
+        });
+    }
+};
+
 HeaderRenderer.prototype.createHeaderCell = function(column, grouped, headerGroup) {
     var that = this;
     var colDef = column.colDef;
@@ -238,6 +267,8 @@ HeaderRenderer.prototype.createHeaderCell = function(column, grouped, headerGrou
     // label div
     var headerCellLabel = document.createElement("div");
     headerCellLabel.className = "ag-header-cell-label";
+
+    this.addHoverListener(colDef, headerCellLabel);
 
     // add in sort icons
     if (this.gridOptionsWrapper.isEnableSorting() && !colDef.suppressSorting) {

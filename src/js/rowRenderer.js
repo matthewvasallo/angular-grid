@@ -752,6 +752,7 @@ RowRenderer.prototype.createCell = function(isFirstColumn, column, valueGetter, 
     this.populateAndStyleGridCell(valueGetter, value, eGridCell, isFirstColumn, node, column, rowIndex, $childScope);
 
     this.addCellClickedHandler(eGridCell, node, column, value, rowIndex);
+    this.addCellHoverHandler(eGridCell, node, column, value, rowIndex);
     this.addCellDoubleClickedHandler(eGridCell, node, column, value, rowIndex, $childScope, isFirstColumn, valueGetter);
 
     this.addCellNavigationHandler(eGridCell, rowIndex, column, node);
@@ -1018,6 +1019,41 @@ RowRenderer.prototype.addCellClickedHandler = function(eGridCell, node, column, 
             colDef.cellClicked(paramsForColDef);
         }
     });
+};
+
+RowRenderer.prototype.addCellHoverHandler = function(eGridCell, node, column, value, rowIndex) {
+    var that = this;
+    var colDef = column.colDef;
+    var hoverHandler = colDef.cellHoverHandler;
+
+    if (hoverHandler) {
+        eGridCell.addEventListener("mouseenter", function(e) {
+            var hoverParams = {
+                colDef: colDef,
+                event: e,
+                entering: true,
+                leaving: false,
+                rowIndex: rowIndex,
+                value: value,
+                context: that.gridOptionsWrapper.getContext(),
+                api: that.gridOptionsWrapper.getApi()
+            };
+            hoverHandler(hoverParams);
+        });
+        eGridCell.addEventListener("mouseleave", function(e) {
+            var hoverParams = {
+                colDef: colDef,
+                event: e,
+                entering: false,
+                leaving: true,
+                rowIndex: rowIndex,
+                value: value,
+                context: that.gridOptionsWrapper.getContext(),
+                api: that.gridOptionsWrapper.getApi()
+            };
+            hoverHandler(hoverParams);
+        });
+    }
 };
 
 RowRenderer.prototype.isCellEditable = function(colDef, node) {
