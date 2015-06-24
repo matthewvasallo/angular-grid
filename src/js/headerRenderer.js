@@ -125,29 +125,11 @@ HeaderRenderer.prototype.createGroupedHeaderCell = function(group) {
 
 HeaderRenderer.prototype.addGroupExpandIcon = function(group, eHeaderGroup, expanded) {
     var eGroupIcon;
-    var arrowRenderer = this.gridOptionsWrapper.getGroupingArrowRenderer();
-    if (arrowRenderer) {
-        var rendererParams = {
-            group: group,
-            expanded: expanded,
-            context: this.gridOptionsWrapper.getContext(),
-            api: this.gridOptionsWrapper.getApi()
-        };
-        var rendererResult = arrowRenderer(rendererParams);
-        if (utils.isNodeOrElement(rendererResult)) {
-            eGroupIcon = rendererResult;
-        } else {
-            eGroupIcon = document.createElement("span");
-            eGroupIcon.innerHTML = rendererResult;
-        }
+    if (expanded) {
+        eGroupIcon = utils.createIcon('columnGroupOpened', this.gridOptionsWrapper, null, svgFactory.createArrowLeftSvg);
     } else {
-        if (expanded) {
-            eGroupIcon = utils.createIcon('columnGroupOpened', this.gridOptionsWrapper, null, svgFactory.createArrowLeftSvg);
-        } else {
-            eGroupIcon = utils.createIcon('columnGroupClosed', this.gridOptionsWrapper, null, svgFactory.createArrowRightSvg);
-        }
+        eGroupIcon = utils.createIcon('columnGroupClosed', this.gridOptionsWrapper, null, svgFactory.createArrowRightSvg);
     }
-
     eGroupIcon.className = 'ag-header-expand-icon';
     eHeaderGroup.appendChild(eGroupIcon);
 
