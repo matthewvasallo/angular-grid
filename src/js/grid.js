@@ -438,6 +438,29 @@ Grid.prototype.addApi = function() {
         getBodyScrollLeft: function() {
             return that.eBodyViewport.scrollLeft;
         },
+        // HB Extension
+        getOffsetForColumnIndex: function(colIndex) {
+            return that.columnController.getModel().getOffsetForColumnIndex(colIndex);
+        },
+        // HB Extension
+        openCloseGroupByName: function(name, open) {
+            that.columnController.openCloseGroupByName(name, open);
+        },
+        // HB Extension
+        registerGroupListener: function(listener) {
+            that.columnController.registerGroupListener(listener);
+        },
+        // HB Extension
+        openCloseAllColumnGroups: function(open) {
+            that.columnController.openCloseAllColumnGroups(open);
+        },
+        // HB Extension
+        editCellAtRowColumn: function(rowIndex, columnIndex) {
+            return that.rowRenderer.editCellAtRowColumn(rowIndex, columnIndex);
+        },
+        refreshByRowColumn: function(rowIndex, columnIndex) {
+            that.rowRenderer.refreshByRowColumn(rowIndex, columnIndex);
+        },
         setDatasource: function(datasource) {
             that.setDatasource(datasource);
         },

@@ -121,6 +121,7 @@ RowRenderer.prototype.softRefreshCell = function(eGridCell, isFirstColumn, node,
     }
 };
 
+// HB addition
 RowRenderer.prototype.refreshByRowColumn = function(rowIndex, columnIndex) {
     var renderedRow = this.renderedRows[rowIndex];
     if (renderedRow) {
@@ -128,6 +129,11 @@ RowRenderer.prototype.refreshByRowColumn = function(rowIndex, columnIndex) {
         var eGridCell = renderedRow.eCells[column.colKey];
         this.softRefreshCell(eGridCell, columnIndex == 0, renderedRow.node, column, rowIndex, null);
     }
+};
+
+// HB addition
+RowRenderer.prototype.editCellAtRowColumn = function(rowIndex, columnIndex) {
+    return this.renderedRowStartEditingListeners[rowIndex][columnIndex]();
 };
 
 RowRenderer.prototype.rowDataChanged = function(rows) {
