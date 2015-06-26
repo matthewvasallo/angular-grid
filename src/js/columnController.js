@@ -119,7 +119,9 @@ ColumnController.prototype.setGroupOpened = function(group, open) {
 ColumnController.prototype.openCloseAllColumnGroups = function(open) {
     var groups = this.columnGroups;
     for (var i = 0; i < groups.length; i++) {
-        groups[i].expanded = open;
+        if (groups[i].expandable) {
+            groups[i].expanded = open;
+        }
     }
     this.updateGroups();
     this.updateVisibleColumns();
