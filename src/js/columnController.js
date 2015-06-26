@@ -127,6 +127,17 @@ ColumnController.prototype.openCloseAllColumnGroups = function(open) {
 };
 
 // HB extension
+ColumnController.prototype.openCloseGroupByName = function(name, open) {
+    var groups = this.columnGroups;
+    for (var i = 0; i < groups.length; i++) {
+        if (groups[i].name === name) {
+            this.setGroupOpened(groups[i], open);
+            break;
+        }
+    }
+};
+
+// HB extension
 ColumnController.prototype.registerGroupListener = function(listener) {
     this.groupListener = listener;
 };
