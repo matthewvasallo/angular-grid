@@ -69,6 +69,11 @@ HeaderRenderer.prototype.createGroupedHeaderCell = function(group) {
     } else {
         classNames.push('ag-header-group-cell-no-group');
     }
+    if (group.expandable && !group.expanded) {
+        classNames.push('ag-header-group-collapsed');
+    } else {
+        classNames.push('ag-header-group-expanded');
+    }
     eHeaderGroupCell.className = classNames.join(' ');
 
     if (this.gridOptionsWrapper.isEnableColResize()) {
@@ -179,6 +184,35 @@ HeaderRenderer.prototype.insertHeadersWithoutGrouping = function() {
     });
 };
 
+// private
+HeaderRenderer.prototype.addHoverListener = function(colDef, headerCellLabel) {
+    var that = this;
+    if (colDef.headerHoverHandler) {
+        headerCellLabel.addEventListener("mouseenter", function (e) {
+            var hoverParams = {
+                colDef: colDef,
+                event: e,
+                entering: true,
+                leaving: false,
+                context: that.gridOptionsWrapper.getContext(),
+                api: that.gridOptionsWrapper.getApi()
+            };
+            colDef.headerHoverHandler(hoverParams);
+        });
+        headerCellLabel.addEventListener("mouseleave", function (e) {
+            var hoverParams = {
+                colDef: colDef,
+                event: e,
+                entering: false,
+                leaving: true,
+                context: that.gridOptionsWrapper.getContext(),
+                api: that.gridOptionsWrapper.getApi()
+            };
+            colDef.headerHoverHandler(hoverParams);
+        });
+    }
+};
+
 HeaderRenderer.prototype.createHeaderCell = function(column, grouped, headerGroup) {
     var that = this;
     var colDef = column.colDef;
@@ -244,6 +278,8 @@ HeaderRenderer.prototype.createHeaderCell = function(column, grouped, headerGrou
     var headerCellLabel = document.createElement("div");
     headerCellLabel.className = "ag-header-cell-label";
 
+    this.addHoverListener(colDef, headerCellLabel);
+
     // add in sort icons
     if (this.gridOptionsWrapper.isEnableSorting() && !colDef.suppressSorting) {
         column.eSortAsc = utils.createIcon('sortAscending', this.gridOptionsWrapper, column, svgFactory.createArrowDownSvg);
@@ -255,6 +291,16 @@ HeaderRenderer.prototype.createHeaderCell = function(column, grouped, headerGrou
         column.eSortAsc.style.display = 'none';
         column.eSortDesc.style.display = 'none';
         this.addSortHandling(headerCellLabel, column);
+    } else if (colDef.headerClickHandler) {
+        var params = {
+            colDef: colDef,
+            context: this.gridOptionsWrapper.getContext(),
+            api: this.gridOptionsWrapper.getApi()
+        };
+        headerCellLabel.addEventListener("click", function(e) {
+            params.event = e;
+            colDef.headerClickHandler(params);
+        });
     }
 
     // add in filter icon

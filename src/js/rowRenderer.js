@@ -118,6 +118,21 @@ RowRenderer.prototype.softRefreshCell = function(eGridCell, isFirstColumn, node,
     }
 };
 
+// HB addition
+RowRenderer.prototype.refreshByRowColumn = function(rowIndex, columnIndex) {
+    var renderedRow = this.renderedRows[rowIndex];
+    if (renderedRow) {
+        var column = this.columnModel.getAllColumns()[columnIndex];
+        var eGridCell = renderedRow.eCells[column.colKey];
+        this.softRefreshCell(eGridCell, columnIndex == 0, renderedRow.node, column, rowIndex, null);
+    }
+};
+
+// HB addition
+RowRenderer.prototype.editCellAtRowColumn = function(rowIndex, columnIndex) {
+    return this.renderedRowStartEditingListeners[rowIndex][columnIndex]();
+};
+
 RowRenderer.prototype.rowDataChanged = function(rows) {
     // we only need to be worried about rendered rows, as this method is
     // called to whats rendered. if the row isn't rendered, we don't care
@@ -252,6 +267,7 @@ RowRenderer.prototype.ensureRowsRendered = function() {
 
     var mainRowWidth = this.columnModel.getBodyContainerWidth();
     var that = this;
+    var rowsInserted = false;
 
     // at the end, this array will contain the items we need to remove
     var rowsToRemove = Object.keys(this.renderedRows);
@@ -267,11 +283,24 @@ RowRenderer.prototype.ensureRowsRendered = function() {
         var node = this.rowModel.getVirtualRow(rowIndex);
         if (node) {
             that.insertRow(node, rowIndex, mainRowWidth);
+            rowsInserted = true;
         }
     }
 
     // at this point, everything in our 'rowsToRemove' . . .
     this.removeVirtualRows(rowsToRemove);
+
+    var domRowsChangedFn = this.gridOptionsWrapper.getDOMRowsChangedHandler();
+
+    //Notify outside world that dom rows changed.
+    if((rowsInserted || rowsToRemove.length > 0) && domRowsChangedFn){
+        //get all currently rendered rows in dom.
+        var rowsInDOM = [];
+        Object.keys(that.renderedRows).forEach(function(key) {
+            rowsInDOM.push(that.renderedRows[key].node.data);
+        });
+        domRowsChangedFn(rowsInDOM);
+    }
 
     // if we are doing angular compiling, then do digest the scope here
     if (this.gridOptionsWrapper.isAngularCompileRows()) {
@@ -731,6 +760,7 @@ RowRenderer.prototype.createCell = function(isFirstColumn, column, valueGetter, 
     this.populateAndStyleGridCell(valueGetter, value, eGridCell, isFirstColumn, node, column, rowIndex, $childScope);
 
     this.addCellClickedHandler(eGridCell, node, column, value, rowIndex);
+    this.addCellHoverHandler(eGridCell, node, column, value, rowIndex);
     this.addCellDoubleClickedHandler(eGridCell, node, column, value, rowIndex, $childScope, isFirstColumn, valueGetter);
 
     this.addCellNavigationHandler(eGridCell, rowIndex, column, node);
@@ -1026,6 +1056,41 @@ RowRenderer.prototype.addCellClickedHandler = function(eGridCell, node, column, 
     });
 };
 
+RowRenderer.prototype.addCellHoverHandler = function(eGridCell, node, column, value, rowIndex) {
+    var that = this;
+    var colDef = column.colDef;
+    var hoverHandler = colDef.cellHoverHandler;
+
+    if (hoverHandler) {
+        eGridCell.addEventListener("mouseenter", function(e) {
+            var hoverParams = {
+                colDef: colDef,
+                event: e,
+                entering: true,
+                leaving: false,
+                rowIndex: rowIndex,
+                value: value,
+                context: that.gridOptionsWrapper.getContext(),
+                api: that.gridOptionsWrapper.getApi()
+            };
+            hoverHandler(hoverParams);
+        });
+        eGridCell.addEventListener("mouseleave", function(e) {
+            var hoverParams = {
+                colDef: colDef,
+                event: e,
+                entering: false,
+                leaving: true,
+                rowIndex: rowIndex,
+                value: value,
+                context: that.gridOptionsWrapper.getContext(),
+                api: that.gridOptionsWrapper.getApi()
+            };
+            hoverHandler(hoverParams);
+        });
+    }
+};
+
 RowRenderer.prototype.isCellEditable = function(colDef, node) {
     if (this.editingCell) {
         return false;
@@ -1094,23 +1159,59 @@ RowRenderer.prototype.stopEditing = function(eGridCell, column, node, $childScop
     this.populateAndStyleGridCell(valueGetter, newValue, eGridCell, isFirstColumn, node, column, rowIndex, $childScope);
 };
 
+RowRenderer.prototype.useEditCellRenderer = function(column, node, $childScope, rowIndex, valueGetter) {
+    var colDef = column.colDef;
+    var rendererParams = {
+        value: valueGetter(),
+        valueGetter: valueGetter,
+        data: node.data,
+        node: node,
+        colDef: colDef,
+        column: column,
+        $scope: $childScope,
+        rowIndex: rowIndex,
+        api: this.gridOptionsWrapper.getApi(),
+        context: this.gridOptionsWrapper.getContext(),
+    };
+
+    var editRenderer = colDef.editCellRenderer;
+    var resultFromRenderer = editRenderer(rendererParams);
+
+    return resultFromRenderer;
+};
+
 RowRenderer.prototype.startEditing = function(eGridCell, column, node, $childScope, rowIndex, isFirstColumn, valueGetter) {
     var that = this;
     this.editingCell = true;
     utils.removeAllChildren(eGridCell);
-    var eInput = document.createElement('input');
-    eInput.type = 'text';
-    utils.addCssClass(eInput, 'ag-cell-edit-input');
+    var eInput, nodeToAppend;
 
-    if (valueGetter) {
-        var value = valueGetter();
-        if (value !== null && value !== undefined) {
-            eInput.value = value;
+    if (column.colDef.editCellRenderer) {
+        nodeToAppend = document.createElement('span');
+        var editCell = this.useEditCellRenderer(column, node, $childScope, rowIndex, valueGetter);
+        if (utils.isNodeOrElement(editCell)) {
+            nodeToAppend.appendChild(editCell)
+        } else {
+            nodeToAppend.innerHTML = editCell;
         }
+        eInput = nodeToAppend.querySelector('input');
+    } else {
+        eInput = document.createElement('input');
+        eInput.type = 'text';
+        nodeToAppend = eInput;
+        utils.addCssClass(eInput, 'ag-cell-edit-input');
+
+        if (valueGetter) {
+            var value = valueGetter();
+            if (value !== null && value !== undefined) {
+                eInput.value = value;
+            }
+        }
+
+        eInput.style.width = (column.actualWidth - 14) + 'px';
     }
 
-    eInput.style.width = (column.actualWidth - 14) + 'px';
-    eGridCell.appendChild(eInput);
+    eGridCell.appendChild(nodeToAppend);
     eInput.focus();
     eInput.select();
 

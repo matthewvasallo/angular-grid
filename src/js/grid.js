@@ -404,6 +404,52 @@ Grid.prototype.getFilterModel = function() {
 Grid.prototype.addApi = function() {
     var that = this;
     var api = {
+        // HB Extension
+        getColumnController: function() {
+            return that.columnController;
+        },
+        // HB Extension
+        getRowRenderer: function() {
+            return that.rowRenderer;
+        },
+        // HB Extension
+        scrollToColumnIndex: function(colIndex) {
+            var columnModel = that.columnController.getModel();
+            var offset = columnModel.getOffsetForColumnIndex(colIndex);
+            var totalWidth = columnModel.getBodyContainerWidth();
+            var viewport = that.gridPanel.eBodyViewport;
+            if (offset + viewport.offsetWidth > totalWidth) {
+                offset = columnModel.getBodyContainerWidth() - viewport.offsetWidth;
+            }
+            viewport.scrollLeft = offset;
+        },
+        // HB Extension
+        getBodyScrollLeft: function() {
+            return that.gridPanel.eBodyViewport.scrollLeft;
+        },
+        // HB Extension
+        getOffsetForColumnIndex: function(colIndex) {
+            return that.columnController.getModel().getOffsetForColumnIndex(colIndex);
+        },
+        // HB Extension
+        openCloseGroupByName: function(name, open) {
+            that.columnController.openCloseGroupByName(name, open);
+        },
+        // HB Extension
+        registerGroupListener: function(listener) {
+            that.columnController.registerGroupListener(listener);
+        },
+        // HB Extension
+        openCloseAllColumnGroups: function(open) {
+            that.columnController.openCloseAllColumnGroups(open);
+        },
+        // HB Extension
+        editCellAtRowColumn: function(rowIndex, columnIndex) {
+            return that.rowRenderer.editCellAtRowColumn(rowIndex, columnIndex);
+        },
+        refreshByRowColumn: function(rowIndex, columnIndex) {
+            that.rowRenderer.refreshByRowColumn(rowIndex, columnIndex);
+        },
         setDatasource: function(datasource) {
             that.setDatasource(datasource);
         },
@@ -695,6 +741,104 @@ Grid.prototype.updateBodyContainerWidthAfterColResize = function() {
 
 Grid.prototype.updatePinnedColContainerWidthAfterColResize = function() {
     this.gridPanel.setPinnedColContainerWidth();
+};
+
+Grid.prototype.setPinnedColContainerWidth = function() {
+    var pinnedColWidth = this.columnModel.getPinnedContainerWidth() + "px";
+    var pinnedViewPortWidth = "";
+    if(this.gridOptionsWrapper.isPinnedColAutoExpandWidth() && this.columnController.visibleColumns[this.columnController.visibleColumns.length - 1].pinned)
+    {
+        pinnedColWidth = "99%";
+        pinnedViewPortWidth = "99.5%"
+    }
+    this.ePinnedColsViewport.style.width = pinnedViewPortWidth;
+    this.ePinnedColsContainer.style.width = pinnedColWidth;
+    this.gridPanel.eBodyViewportWrapper.style.marginLeft = pinnedColWidth;
+};
+
+// see if a grey box is needed at the bottom of the pinned col
+Grid.prototype.setPinnedColHeight = function() {
+    // var bodyHeight = utils.pixelStringToNumber(this.eBody.style.height);
+    var scrollShowing = this.gridPanel.eBodyViewport.clientWidth < this.gridPanel.eBodyViewport.scrollWidth;
+    var bodyHeight = this.gridPanel.eBodyViewport.offsetHeight;
+    if (scrollShowing) {
+        this.ePinnedColsViewport.style.height = (bodyHeight - this.scrollWidth) + "px";
+    } else {
+        this.ePinnedColsViewport.style.height = bodyHeight + "px";
+    }
+    // also the loading overlay, needs to have it's height adjusted
+    this.eLoadingPanel.style.height = bodyHeight + 'px';
+};
+
+Grid.prototype.setBodySize = function() {
+    var _this = this;
+
+    var bodyHeight = this.gridPanel.eBodyViewport.offsetHeight;
+    var pagingVisible = this.isShowPagingPanel();
+
+    if (this.bodyHeightLastTime != bodyHeight || this.showPagingPanelVisibleLastTime != pagingVisible) {
+        this.bodyHeightLastTime = bodyHeight;
+        this.showPagingPanelVisibleLastTime = pagingVisible;
+
+        this.setPinnedColHeight();
+
+        //only draw virtual rows if done sort & filter - this
+        //means we don't draw rows if table is not yet initialised
+        if (this.rowModel.getVirtualRowCount() > 0) {
+            this.rowRenderer.drawVirtualRows();
+        }
+
+        // show and position paging panel
+        this.showAndPositionPagingPanel();
+    }
+
+    if (!this.finished) {
+        setTimeout(function() {
+            _this.setBodySize();
+        }, 200);
+    }
+};
+
+Grid.prototype.addScrollListener = function() {
+    var that = this;
+
+    var lastLeftPosition = -1;
+    var lastTopPosition = -1;
+
+    this.gridPanel.eBodyViewport.addEventListener("scroll", function() {
+        var newLeftPosition = that.gridPanel.eBodyViewport.scrollLeft;
+        var newTopPosition = that.gridPanel.eBodyViewport.scrollTop;
+
+        if (newLeftPosition !== lastLeftPosition) {
+            lastLeftPosition = newLeftPosition;
+            that.scrollHeader(newLeftPosition);
+        }
+
+        if (newTopPosition !== lastTopPosition) {
+            lastTopPosition = newTopPosition;
+            that.scrollPinned(newTopPosition);
+            that.rowRenderer.drawVirtualRows();
+        }
+    });
+
+    this.ePinnedColsViewport.addEventListener("scroll", function() {
+        // this means the pinned panel was moved, which can only
+        // happen when the user is navigating in the pinned container
+        // as the pinned col should never scroll. so we rollback
+        // the scroll on the pinned.
+        that.ePinnedColsViewport.scrollTop = 0;
+    });
+
+};
+
+Grid.prototype.scrollHeader = function(bodyLeftPosition) {
+    // this.eHeaderContainer.style.transform = 'translate3d(' + -bodyLeftPosition + "px,0,0)";
+    this.eHeaderContainer.style.left = -bodyLeftPosition + "px";
+};
+
+Grid.prototype.scrollPinned = function(bodyTopPosition) {
+    // this.ePinnedColsContainer.style.transform = 'translate3d(0,' + -bodyTopPosition + "px,0)";
+    this.ePinnedColsContainer.style.top = -bodyTopPosition + "px";
 };
 
 Grid.prototype.doLayout = function() {

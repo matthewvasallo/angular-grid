@@ -52,6 +52,21 @@ ColumnController.prototype.createModel = function() {
         getColumn: function(key) {
             return that.getColumn(key);
         },
+        // HB extension
+        // used by:
+        // + grid -> scrollToColumnIndex
+        getOffsetForColumnIndex: function(colIndex) {
+            var offset = 0;
+            var min = Math.min(colIndex, that.allColumns.length);
+            for (var i = 0; i < min; i++) {
+                var col = that.allColumns[i];
+                if (!col.pinned && that.displayedColumns.indexOf(col) >= 0) {
+                    offset += col.actualWidth;
+                }
+            }
+
+            return offset;
+        },
         // used by:
         // + rowRenderer -> for navigation
         getVisibleColBefore: function(col) {
@@ -158,10 +173,48 @@ ColumnController.prototype.checkForDeprecatedItems = function(columnDefs) {
 
 // called by headerRenderer - when a header is opened or closed
 ColumnController.prototype.headerGroupOpened = function(group) {
-    group.expanded = !group.expanded;
+    this.setGroupOpened(group, !group.expanded);
+};
+
+ColumnController.prototype.setGroupOpened = function(group, open) {
+    group.expanded = open;
+    this.updateGroups();
+    this.updateDisplayedColumns();
+    if (this.groupListener) {
+        this.groupListener(group);
+    }
+    this.angularGrid.refreshHeaderAndBody();
+};
+
+// HB extension
+ColumnController.prototype.openCloseAllHeaderGroups = function(open) {
+    var groups = this.headerGroups;
+    for (var i = 0; i < groups.length; i++) {
+        if (groups[i].expandable) {
+            groups[i].expanded = open;
+        }
+    }
     this.updateGroups();
     this.updateDisplayedColumns();
     this.angularGrid.refreshHeaderAndBody();
+};
+// older name for backward compatibility
+ColumnController.prototype.openCloseAllColumnGroups = ColumnController.prototype.openCloseAllHeaderGroups;
+
+// HB extension
+ColumnController.prototype.openCloseGroupByName = function(name, open) {
+    var groups = this.columnGroups;
+    for (var i = 0; i < groups.length; i++) {
+        if (groups[i].name === name) {
+            this.setGroupOpened(groups[i], open);
+            break;
+        }
+    }
+};
+
+// HB extension
+ColumnController.prototype.registerGroupListener = function(listener) {
+    this.groupListener = listener;
 };
 
 // called by toolPanel - when change in columns happens

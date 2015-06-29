@@ -32,11 +32,13 @@ function jsTask() {
         )
         .bundle()
         .pipe(source('angular-grid.js'))
+        .pipe(gulp.dest('../mindtap-static-lib/thirdparty/angular-grid/1.10.1-cl.1'))
         .pipe(gulp.dest('./dist'))
         .pipe(gulp.dest('./docs/dist'))
         .pipe(buffer())
         .pipe(uglify())
         .pipe(rename('angular-grid.min.js'))
+        .pipe(gulp.dest('../mindtap-static-lib/thirdparty/angular-grid/1.10.1-cl.1'))
         .pipe(gulp.dest('./dist'))
         .pipe(gulp.dest('./docs/dist'));
 }
@@ -53,7 +55,8 @@ function stylusTask() {
                     compress: false,
                 }))
                 .pipe(gulp.dest('./docs/dist/'))
-                .pipe(gulp.dest('./dist/'));
+                .pipe(gulp.dest('./dist/'))
+                .pipe(gulp.dest('../mindtap-static-lib/thirdparty/angular-grid/1.10.1-cl.1'));
         }));
 
     // Compressed
@@ -70,6 +73,7 @@ function stylusTask() {
                     name = name.substring(0, dot) + '.min.css';
                     return name;
                 })()))
+                .pipe(gulp.dest('../mindtap-static-lib/thirdparty/angular-grid/1.7.0-cl.1'))
                 .pipe(gulp.dest('./dist/'))
                 .pipe(gulp.dest('./docs/dist/'));
         }));
