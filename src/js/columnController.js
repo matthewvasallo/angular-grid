@@ -203,7 +203,7 @@ ColumnController.prototype.openCloseAllColumnGroups = ColumnController.prototype
 
 // HB extension
 ColumnController.prototype.openCloseGroupByName = function(name, open) {
-    var groups = this.columnGroups;
+    var groups = this.headerGroups;
     for (var i = 0; i < groups.length; i++) {
         if (groups[i].name === name) {
             this.setGroupOpened(groups[i], open);
