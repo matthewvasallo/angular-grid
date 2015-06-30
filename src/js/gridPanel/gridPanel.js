@@ -186,6 +186,16 @@ GridPanel.prototype.setBodyContainerWidth = function() {
 
 GridPanel.prototype.setPinnedColContainerWidth = function() {
     var pinnedColWidth = this.columnModel.getPinnedContainerWidth() + "px";
+    //MV added code
+    var visibleColumns = this.columnModel.getDisplayedColumns();
+    var pinnedViewPortWidth = "";
+    if(this.gridOptionsWrapper.isPinnedColAutoExpandWidth() && visibleColumns[visibleColumns.length - 1].pinned)
+    {
+        pinnedColWidth = "99%";
+        pinnedViewPortWidth = "99.5%"
+    }
+    this.ePinnedColsViewport.style.width = pinnedViewPortWidth;
+    //End MV added code
     this.ePinnedColsContainer.style.width = pinnedColWidth;
     this.eBodyViewportWrapper.style.marginLeft = pinnedColWidth;
 };
