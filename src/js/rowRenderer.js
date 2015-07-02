@@ -130,7 +130,8 @@ RowRenderer.prototype.refreshByRowColumn = function(rowIndex, columnIndex) {
 
 // HB addition
 RowRenderer.prototype.editCellAtRowColumn = function(rowIndex, columnIndex) {
-    return this.renderedRowStartEditingListeners[rowIndex][columnIndex]();
+    var column = this.columnModel.getAllColumns()[columnIndex];
+    return this.renderedRowStartEditingListeners[rowIndex][column.colId]();
 };
 
 RowRenderer.prototype.rowDataChanged = function(rows) {
