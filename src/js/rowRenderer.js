@@ -1116,7 +1116,7 @@ RowRenderer.prototype.isCellEditable = function(colDef, node) {
     return false;
 };
 
-RowRenderer.prototype.stopEditing = function(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter) {
+RowRenderer.prototype.stopEditing = function(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter, abortEdit) {
     this.editingCell = false;
     var newValue = eInput.value;
     var colDef = column.colDef;
@@ -1127,34 +1127,40 @@ RowRenderer.prototype.stopEditing = function(eGridCell, column, node, $childScop
 
     utils.removeAllChildren(eGridCell);
 
-    var paramsForCallbacks = {
-        node: node,
-        data: node.data,
-        oldValue: node.data[colDef.field],
-        newValue: newValue,
-        rowIndex: rowIndex,
-        colDef: colDef,
-        api: this.gridOptionsWrapper.getApi(),
-        context: this.gridOptionsWrapper.getContext()
-    };
-
-    if (colDef.newValueHandler) {
-        colDef.newValueHandler(paramsForCallbacks);
-    } else {
-        node.data[colDef.field] = newValue;
-    }
-
-    // at this point, the value has been updated
-    var newValue;
-    if (valueGetter) {
+    if (abortEdit) {
+        // aborting edit: restore old value
         newValue = valueGetter();
-    }
-    paramsForCallbacks.newValue = newValue;
-    if (typeof colDef.cellValueChanged === 'function') {
-        colDef.cellValueChanged(paramsForCallbacks);
-    }
-    if (typeof this.gridOptionsWrapper.getCellValueChanged() === 'function') {
-        this.gridOptionsWrapper.getCellValueChanged()(paramsForCallbacks);
+    } else {
+        // process new value
+        var paramsForCallbacks = {
+            node: node,
+            data: node.data,
+            oldValue: node.data[colDef.field],
+            newValue: newValue,
+            rowIndex: rowIndex,
+            colDef: colDef,
+            api: this.gridOptionsWrapper.getApi(),
+            context: this.gridOptionsWrapper.getContext()
+        };
+
+        if (colDef.newValueHandler) {
+            colDef.newValueHandler(paramsForCallbacks);
+        } else {
+            node.data[colDef.field] = newValue;
+        }
+
+        // at this point, the value has been updated
+        var newValue;
+        if (valueGetter) {
+            newValue = valueGetter();
+        }
+        paramsForCallbacks.newValue = newValue;
+        if (typeof colDef.cellValueChanged === 'function') {
+            colDef.cellValueChanged(paramsForCallbacks);
+        }
+        if (typeof this.gridOptionsWrapper.getCellValueChanged() === 'function') {
+            this.gridOptionsWrapper.getCellValueChanged()(paramsForCallbacks);
+        }
     }
 
     this.populateAndStyleGridCell(valueGetter, newValue, eGridCell, isFirstColumn, node, column, rowIndex, $childScope);
@@ -1217,89 +1223,109 @@ RowRenderer.prototype.startEditing = function(eGridCell, column, node, $childSco
     eInput.select();
 
     var blurListener = function() {
-        that.stopEditing(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter);
+        that.stopEditing(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter, false);
     };
 
     //stop entering if we loose focus
     eInput.addEventListener("blur", blurListener);
 
-    //stop editing if enter pressed
-    eInput.addEventListener('keypress', function(event) {
-        var key = event.which || event.keyCode;
-        // 13 is enter
-        if (key == constants.KEY_ENTER) {
-            that.stopEditing(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter);
-            that.focusCell(eGridCell, rowIndex, column.index, true);
-        }
-    });
-
-    // tab key doesn't generate keypress, so need keydown to listen for that
+    var customKeyMap = this.gridOptionsWrapper.getKeyMap() || {};
+    var defaultKeyMap = constants.DEFAULT_KEY_MAP;
+    // tab and arrow keys don't generate keypress, so need to use keydown
     eInput.addEventListener('keydown', function(event) {
         var key = event.which || event.keyCode;
-        if (key == constants.KEY_TAB) {
-            that.stopEditing(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter);
-            that.startEditingNextCell(rowIndex, column, event.shiftKey);
-            // we don't want the default tab action, so return false, this stops the event from bubbling
-            event.preventDefault();
-            return false;
+        var keyDefinition = customKeyMap[key] || defaultKeyMap[key];
+        if (keyDefinition) {
+            var params = keyDefinition[event.shiftKey ? "shift" : "noShift"];
+            if (params) {
+                that.stopEditing(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter, params.abortEdit);
+                if (! (params.abortEdit || params.endEdit)) {
+                    var nextCell = that.findNextByParameters(rowIndex, column, params);
+                    var editFcn = that.renderedRowStartEditingListeners[nextCell.rowIndex][nextCell.column.colId];
+                    if (editFcn) {
+                        editFcn();
+                    }
+                }
+
+                // we don't want the default action, so return false, this stops the event from bubbling
+                event.preventDefault();
+                return false;
+            }
         }
     });
 };
 
-RowRenderer.prototype.startEditingNextCell = function(rowIndex, column, shiftKey) {
-
+RowRenderer.prototype.findNextByParameters = function(rowIndex, column, params) {
     var firstRowToCheck = this.firstVirtualRenderedRow;
     var lastRowToCheck = this.lastVirtualRenderedRow;
     var currentRowIndex = rowIndex;
 
     var visibleColumns = this.columnModel.getDisplayedColumns();
     var currentCol = column;
+    var currentColIndex = visibleColumns.indexOf(currentCol);
 
-    while (true) {
+    var dx = params.deltaX;
+    var dy = params.deltaY;
 
-        var indexOfCurrentCol = visibleColumns.indexOf(currentCol);
-
-        // move backward
-        if (shiftKey) {
-            // move along to the previous cell
-            currentCol = visibleColumns[indexOfCurrentCol - 1];
-            // check if end of the row, and if so, go back a row
-            if (!currentCol) {
-                currentCol = visibleColumns[visibleColumns.length - 1];
-                currentRowIndex--;
-            }
-
-            // if got to end of rendered rows, then quit looking
-            if (currentRowIndex < firstRowToCheck) {
-                return;
-            }
-            // move forward
-        } else {
-            // move along to the next cell
-            currentCol = visibleColumns[indexOfCurrentCol + 1];
-            // check if end of the row, and if so, go forward a row
-            if (!currentCol) {
-                currentCol = visibleColumns[0];
-                currentRowIndex++;
-            }
-
-            // if got to end of rendered rows, then quit looking
-            if (currentRowIndex > lastRowToCheck) {
-                return;
-            }
-        }
-
-        var nextFunc = this.renderedRowStartEditingListeners[currentRowIndex][currentCol.colId];
-        if (nextFunc) {
-            // see if the next cell is editable, and if so, we have come to
-            // the end of our search, so stop looking for the next cell
-            var nextCellAcceptedEdit = nextFunc();
-            if (nextCellAcceptedEdit) {
-                return;
-            }
+    var position = {
+        x: {
+            current: currentColIndex,
+            min: 0,
+            max: visibleColumns.length - 1
+        },
+        y: {
+            current: rowIndex,
+            min: firstRowToCheck,
+            max: lastRowToCheck
         }
     }
 
+    while (true) {
+
+        adjustPosition("x", dx);
+        adjustPosition("y", dy);
+
+        currentCol = visibleColumns[position.x.current];
+        var done = false;
+        if (params.editable) {
+            var renderedRow = this.renderedRows[position.y.current];
+            var node = renderedRow.eCells[currentCol.colId];
+            if (this.isCellEditable(currentCol.colDef, node)) {
+                done = true;
+            }
+        } else {
+            done = true;
+        }
+
+        if (done) {
+            return {
+                rowIndex: position.y.current,
+                column: currentCol
+            };
+        }
+    }
+
+    function adjustPosition(which, delta) {
+        if (! delta) {
+            return;
+        }
+
+        var coordinate = position[which];
+        var other = which === "x" ? "y" : "x";
+
+        coordinate.current += delta;
+        if (coordinate.current < coordinate.min) {
+            coordinate.current = coordinate.max;
+            if (params.advanceAtEnd) {
+                adjustPosition(other, -1);
+            }
+        } else if (coordinate.current > coordinate.max) {
+            coordinate.current = coordinate.min;
+            if (params.advanceAtEnd) {
+                adjustPosition(other, 1);
+            }
+        }
+    }
 };
 
 module.exports = RowRenderer;
