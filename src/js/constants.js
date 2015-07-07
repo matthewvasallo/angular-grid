@@ -12,12 +12,38 @@ var constants = {
 
     KEY_TAB: 9,
     KEY_ENTER: 13,
+    KEY_ESCAPE: 27,
     KEY_SPACE: 32,
     KEY_DOWN: 40,
     KEY_UP: 38,
     KEY_LEFT: 37,
     KEY_RIGHT: 39
 };
+
+var map = {};
+map[constants.KEY_TAB] = {
+    noShift: {
+        deltaX: 1,
+        advanceAtEnd: true,
+        editable: true
+    },
+    shift: {
+        deltaX: -1,
+        advanceAtEnd: true,
+        editable: true
+    }
+};
+map[constants.KEY_ENTER] = {
+    noShift: {
+        endEdit: true
+    }
+};
+map[constants.KEY_ESCAPE] = {
+    noShift: {
+        abortEdit: true
+    }
+};
+constants["DEFAULT_KEY_MAP"] = map;
 
 // taken from http://stackoverflow.com/questions/9847580/how-to-detect-safari-chrome-ie-firefox-and-opera-browser
 var isOpera = !!window.opera || navigator.userAgent.indexOf(' OPR/') >= 0;
