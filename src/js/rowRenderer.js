@@ -769,7 +769,7 @@ RowRenderer.prototype.createCell = function(isFirstColumn, column, valueGetter, 
     eGridCell.style.width = utils.formatWidth(column.actualWidth);
 
     // add the 'start editing' call to the chain of editors
-    this.renderedRowStartEditingListeners[rowIndex][column.colId] = function() {
+    var startEdit = function() {
         if (that.isCellEditable(column.colDef, node)) {
             that.startEditing(eGridCell, column, node, $childScope, rowIndex, isFirstColumn, valueGetter);
             return true;
@@ -777,6 +777,11 @@ RowRenderer.prototype.createCell = function(isFirstColumn, column, valueGetter, 
             return false;
         }
     };
+    this.renderedRowStartEditingListeners[rowIndex][column.colId] = startEdit;
+
+    if (this.cellBeingEdited && this.cellBeingEdited.columnIndex === column.colId && this.cellBeingEdited.rowIndex === rowIndex) {
+        startEdit();
+    }
 
     return eGridCell;
 };
@@ -1118,6 +1123,7 @@ RowRenderer.prototype.isCellEditable = function(colDef, node) {
 
 RowRenderer.prototype.stopEditing = function(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter, abortEdit) {
     this.editingCell = false;
+    this.cellBeingEdited = null;
     var newValue = eInput.value;
     var colDef = column.colDef;
 
@@ -1178,7 +1184,7 @@ RowRenderer.prototype.useEditCellRenderer = function(column, node, $childScope, 
         $scope: $childScope,
         rowIndex: rowIndex,
         api: this.gridOptionsWrapper.getApi(),
-        context: this.gridOptionsWrapper.getContext(),
+        context: this.gridOptionsWrapper.getContext()
     };
 
     var editRenderer = colDef.editCellRenderer;
@@ -1219,7 +1225,10 @@ RowRenderer.prototype.startEditing = function(eGridCell, column, node, $childSco
     }
 
     eGridCell.appendChild(nodeToAppend);
-    eInput.focus();
+    setTimeout(function() {
+        // do this in a timeout because if we've just wrapped around from top to bottom, this node might not be in the DOM yet
+        eInput.focus();
+    }, 0);
     eInput.select();
 
     var blurListener = function() {
@@ -1241,9 +1250,17 @@ RowRenderer.prototype.startEditing = function(eGridCell, column, node, $childSco
                 that.stopEditing(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter, params.abortEdit);
                 if (! (params.abortEdit || params.endEdit)) {
                     var nextCell = that.findNextByParameters(rowIndex, column, params);
-                    var editFcn = that.renderedRowStartEditingListeners[nextCell.rowIndex][nextCell.column.colId];
-                    if (editFcn) {
-                        editFcn();
+                    if (nextCell.rowIndex < that.firstVirtualRenderedRow || nextCell.rowIndex > that.lastVirtualRenderedRow) {
+                        that.cellBeingEdited = {};
+                        that.cellBeingEdited.rowIndex = nextCell.rowIndex;
+                        that.cellBeingEdited.columnIndex = nextCell.column.colId;
+                        that.gridPanel.ensureIndexVisible(nextCell.rowIndex);
+                    } else {
+                        var rowFcns = that.renderedRowStartEditingListeners[nextCell.rowIndex];
+                        var editFcn = rowFcns ? rowFcns[nextCell.column.colId] : null;
+                        if (editFcn) {
+                            editFcn();
+                        }
                     }
                 }
 
@@ -1256,10 +1273,6 @@ RowRenderer.prototype.startEditing = function(eGridCell, column, node, $childSco
 };
 
 RowRenderer.prototype.findNextByParameters = function(rowIndex, column, params) {
-    var firstRowToCheck = this.firstVirtualRenderedRow;
-    var lastRowToCheck = this.lastVirtualRenderedRow;
-    var currentRowIndex = rowIndex;
-
     var visibleColumns = this.columnModel.getDisplayedColumns();
     var currentCol = column;
     var currentColIndex = visibleColumns.indexOf(currentCol);
@@ -1275,10 +1288,10 @@ RowRenderer.prototype.findNextByParameters = function(rowIndex, column, params) 
         },
         y: {
             current: rowIndex,
-            min: firstRowToCheck,
-            max: lastRowToCheck
+            min: 0,
+            max: this.rowModel.getVirtualRowCount() - 1
         }
-    }
+    };
 
     while (true) {
 
@@ -1289,8 +1302,7 @@ RowRenderer.prototype.findNextByParameters = function(rowIndex, column, params) 
         var done = false;
         if (params.editable) {
             var renderedRow = this.renderedRows[position.y.current];
-            var node = renderedRow.eCells[currentCol.colId];
-            if (this.isCellEditable(currentCol.colDef, node)) {
+            if (renderedRow && this.isCellEditable(currentCol.colDef, renderedRow.node)) {
                 done = true;
             }
         } else {
