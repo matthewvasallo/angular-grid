@@ -124,7 +124,9 @@ RowRenderer.prototype.refreshByRowColumn = function(rowIndex, columnIndex) {
     if (renderedRow) {
         var column = this.columnModel.getAllColumns()[columnIndex];
         var eGridCell = renderedRow.eCells[column.colId];
-        this.softRefreshCell(eGridCell, columnIndex == 0, renderedRow.node, column, rowIndex, null);
+        if (eGridCell) {
+            this.softRefreshCell(eGridCell, columnIndex == 0, renderedRow.node, column, rowIndex, null);
+        }
     }
 };
 
