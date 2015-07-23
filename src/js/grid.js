@@ -450,6 +450,9 @@ Grid.prototype.addApi = function() {
         refreshByRowColumn: function(rowIndex, columnIndex) {
             that.rowRenderer.refreshByRowColumn(rowIndex, columnIndex);
         },
+        refreshByRow: function(rowIndex) {
+            that.rowRenderer.refreshByRow(rowIndex);
+        },
         setDatasource: function(datasource) {
             that.setDatasource(datasource);
         },

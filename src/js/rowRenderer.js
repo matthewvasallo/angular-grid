@@ -131,6 +131,21 @@ RowRenderer.prototype.refreshByRowColumn = function(rowIndex, columnIndex) {
 };
 
 // HB addition
+RowRenderer.prototype.refreshByRow = function(rowIndex) {
+    var renderedRow = this.renderedRows[rowIndex];
+    if (renderedRow) {
+        var columns = this.columnModel.getDisplayedColumns();
+        for (var columnIndex=0; columnIndex < columns.length; columnIndex++) {
+            var column = columns[columnIndex];
+            var eGridCell = renderedRow.eCells[column.colId];
+            if (eGridCell) {
+                this.softRefreshCell(eGridCell, columnIndex == 0, renderedRow.node, column, rowIndex, null);
+            }
+        }
+    }
+};
+
+// HB addition
 RowRenderer.prototype.editCellAtRowColumn = function(rowIndex, columnIndex) {
     var column = this.columnModel.getAllColumns()[columnIndex];
     return this.renderedRowStartEditingListeners[rowIndex][column.colId]();
