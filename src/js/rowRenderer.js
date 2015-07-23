@@ -271,6 +271,7 @@ RowRenderer.prototype.ensureRowsRendered = function() {
     var mainRowWidth = this.columnModel.getBodyContainerWidth();
     var that = this;
     var rowsInserted = false;
+    this.rowsChanged = [];
 
     // at the end, this array will contain the items we need to remove
     var rowsToRemove = Object.keys(this.renderedRows);
@@ -341,7 +342,8 @@ RowRenderer.prototype.asyncRender = function() {
     var domRowsChangedFn = this.gridOptionsWrapper.getDOMRowsChangedHandler();
     //Notify outside world that dom rows changed.
     if(rowsInserted && domRowsChangedFn){
-        domRowsChangedFn([this.renderedRows[rowIndex].node.data]);
+        this.rowsChanged.push(this.renderedRows[rowIndex].node.data);
+//        domRowsChangedFn([this.renderedRows[rowIndex].node.data]);
     }
 
     if (rowsInserted) {
@@ -350,11 +352,17 @@ RowRenderer.prototype.asyncRender = function() {
         }, 0);
     }
 
-    if (!rowsInserted && this.gridOptionsWrapper.isAngularCompileRows()) {
-        // we do it in a timeout, in case we are already in an apply
-        setTimeout(function() {
-            that.$scope.$apply();
-        }, 0);
+    if (!rowsInserted) {
+        if (this.rowsChanged && this.rowsChanged.length > 0) {
+            domRowsChangedFn(this.rowsChanged);
+            this.rowsChanged = [];
+        }
+        if ( this.gridOptionsWrapper.isAngularCompileRows()) {
+            // we do it in a timeout, in case we are already in an apply
+            setTimeout(function() {
+                that.$scope.$apply();
+            }, 0);
+        }
     }
 };
 
