@@ -283,30 +283,74 @@ RowRenderer.prototype.ensureRowsRendered = function() {
             continue;
         }
         // check this row actually exists (in case overflow buffer window exceeds real data)
-        var node = this.rowModel.getVirtualRow(rowIndex);
-        if (node) {
-            that.insertRow(node, rowIndex, mainRowWidth);
-            rowsInserted = true;
-        }
+//        var node = this.rowModel.getVirtualRow(rowIndex);
+//        if (node) {
+//            that.insertRow(node, rowIndex, mainRowWidth);
+//            rowsInserted = true;
+//        }
     }
 
     // at this point, everything in our 'rowsToRemove' . . .
     this.removeVirtualRows(rowsToRemove);
 
-    var domRowsChangedFn = this.gridOptionsWrapper.getDOMRowsChangedHandler();
+//    var domRowsChangedFn = this.gridOptionsWrapper.getDOMRowsChangedHandler();
 
     //Notify outside world that dom rows changed.
-    if((rowsInserted || rowsToRemove.length > 0) && domRowsChangedFn){
-        //get all currently rendered rows in dom.
-        var rowsInDOM = [];
-        Object.keys(that.renderedRows).forEach(function(key) {
-            rowsInDOM.push(that.renderedRows[key].node.data);
-        });
-        domRowsChangedFn(rowsInDOM);
-    }
+//    if((rowsInserted || rowsToRemove.length > 0) && domRowsChangedFn){
+//        get all currently rendered rows in dom.
+//        var rowsInDOM = [];
+//        Object.keys(that.renderedRows).forEach(function(key) {
+//            rowsInDOM.push(that.renderedRows[key].node.data);
+//        });
+//        domRowsChangedFn(rowsInDOM);
+//    }
 
     // if we are doing angular compiling, then do digest the scope here
-    if (this.gridOptionsWrapper.isAngularCompileRows()) {
+//    if (this.gridOptionsWrapper.isAngularCompileRows()) {
+        // we do it in a timeout, in case we are already in an apply
+//        setTimeout(function() {
+//            that.$scope.$apply();
+//        }, 0);
+//    }
+
+    setTimeout(function() {
+        that.asyncRender();
+    }, 0);
+};
+
+RowRenderer.prototype.asyncRender = function() {
+    var rowsInserted = false;
+    var rowIndex;
+    var that = this;
+    var mainRowWidth = this.columnModel.getBodyContainerWidth();
+
+    for (rowIndex = this.firstVirtualRenderedRow; rowIndex <= this.lastVirtualRenderedRow; rowIndex++) {
+        // check this row actually exists (in case overflow buffer window exceeds real data)
+        var renderedRow = this.renderedRows[rowIndex];
+        if (renderedRow) {
+            continue;
+        }
+        var node = this.rowModel.getVirtualRow(rowIndex);
+        if (node) {
+            that.insertRow(node, rowIndex, mainRowWidth);
+            rowsInserted = true;
+            break;
+        }
+    }
+
+    var domRowsChangedFn = this.gridOptionsWrapper.getDOMRowsChangedHandler();
+    //Notify outside world that dom rows changed.
+    if(rowsInserted && domRowsChangedFn){
+        domRowsChangedFn([this.renderedRows[rowIndex].node.data]);
+    }
+
+    if (rowsInserted) {
+        setTimeout(function() {
+            that.asyncRender();
+        }, 0);
+    }
+
+    if (!rowsInserted && this.gridOptionsWrapper.isAngularCompileRows()) {
         // we do it in a timeout, in case we are already in an apply
         setTimeout(function() {
             that.$scope.$apply();
