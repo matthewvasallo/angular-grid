@@ -29,6 +29,8 @@ RowRenderer.prototype.init = function(gridOptions, columnModel, gridOptionsWrapp
     // [scope, bodyRow, pinnedRow, rowData]
     this.renderedRows = {};
 
+    this.rowsToReuse = [];
+
     this.renderedRowStartEditingListeners = {};
 
     this.editingCell = false; //gets set to true when editing a cell
@@ -217,11 +219,13 @@ RowRenderer.prototype.removeVirtualRows = function(rowsToRemove, fromIndex) {
 RowRenderer.prototype.removeVirtualRow = function(indexToRemove) {
     var renderedRow = this.renderedRows[indexToRemove];
     if (renderedRow.pinnedElement && this.ePinnedColsContainer) {
-        this.ePinnedColsContainer.removeChild(renderedRow.pinnedElement);
+//        this.ePinnedColsContainer.removeChild(renderedRow.pinnedElement);
+        renderedRow.pinnedElement.style.top = "-100px";
     }
 
     if (renderedRow.bodyElement) {
-        this.eBodyContainer.removeChild(renderedRow.bodyElement);
+//        this.eBodyContainer.removeChild(renderedRow.bodyElement);
+        renderedRow.bodyElement.style.top = "-100px";
     }
 
     if (renderedRow.scope) {
@@ -235,6 +239,8 @@ RowRenderer.prototype.removeVirtualRow = function(indexToRemove) {
 
     delete this.renderedRows[indexToRemove];
     delete this.renderedRowStartEditingListeners[indexToRemove];
+
+    this.rowsToReuse.push(renderedRow);
 };
 
 RowRenderer.prototype.drawVirtualRows = function() {
@@ -379,7 +385,21 @@ RowRenderer.prototype.insertRow = function(node, rowIndex, mainRowWidth) {
 
     eMainRow.style.width = mainRowWidth + "px";
 
-    var renderedRow = {
+    var renderedRow;
+
+    if (this.rowsToReuse.length > 0) {
+        renderedRow = this.rowsToReuse.pop();
+        this.renderedRows[rowIndex] = renderedRow;
+        this.renderedRowStartEditingListeners[rowIndex] = {};
+        if (renderedRow.pinnedElement) {
+            this.styleRowContainer(renderedRow.pinnedElement, rowIndex, node, rowIsAGroup, newChildScope);
+        }
+        this.styleRowContainer(renderedRow.bodyElement, rowIndex, node, rowIsAGroup, newChildScope);
+        this.refreshByRow(rowIndex);
+        return;
+    }
+
+    renderedRow = {
         scope: newChildScope,
         node: node,
         rowIndex: rowIndex,
@@ -547,6 +567,17 @@ RowRenderer.prototype.addClassesToRow = function(rowIndex, node, eRow) {
 RowRenderer.prototype.createRowContainer = function(rowIndex, node, groupRow, $scope) {
     var eRow = document.createElement("div");
 
+    this.styleRowContainer(eRow, rowIndex, node, groupRow, $scope);
+
+    var _this = this;
+    eRow.addEventListener("click", function(event) {
+        _this.angularGrid.onRowClicked(event, Number(this.getAttribute("row")), node)
+    });
+
+    return eRow;
+};
+
+RowRenderer.prototype.styleRowContainer = function(eRow, rowIndex, node, groupRow, $scope) {
     this.addClassesToRow(rowIndex, node, eRow);
 
     eRow.setAttribute('row', rowIndex);
@@ -579,13 +610,6 @@ RowRenderer.prototype.createRowContainer = function(rowIndex, node, groupRow, $s
             });
         }
     }
-
-    var _this = this;
-    eRow.addEventListener("click", function(event) {
-        _this.angularGrid.onRowClicked(event, Number(this.getAttribute("row")), node)
-    });
-
-    return eRow;
 };
 
 RowRenderer.prototype.getIndexOfRenderedNode = function(node) {
