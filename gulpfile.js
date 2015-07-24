@@ -33,6 +33,7 @@ function jsTask() {
         .bundle()
         .pipe(source('angular-grid.js'))
         .pipe(gulp.dest('../mindtap-static-lib/thirdparty/angular-grid/1.10.1-cl.1'))
+        .pipe(gulp.dest('../mindapp-progress/client/src/app/support'))
         .pipe(gulp.dest('./dist'))
         .pipe(gulp.dest('./docs/dist'))
         .pipe(buffer())
