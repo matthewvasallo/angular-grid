@@ -286,7 +286,6 @@ RowRenderer.prototype.ensureRowsRendered = function() {
     var mainRowWidth = this.columnModel.getBodyContainerWidth();
     var that = this;
     var rowsInserted = false;
-    this.rowsChanged = [];
 
     // at the end, this array will contain the items we need to remove
     var rowsToRemove = Object.keys(this.renderedRows);
@@ -298,37 +297,12 @@ RowRenderer.prototype.ensureRowsRendered = function() {
             rowsToRemove.splice(rowsToRemove.indexOf(rowIndex.toString()), 1);
             continue;
         }
-        // check this row actually exists (in case overflow buffer window exceeds real data)
-//        var node = this.rowModel.getVirtualRow(rowIndex);
-//        if (node) {
-//            that.insertRow(node, rowIndex, mainRowWidth);
-//            rowsInserted = true;
-//        }
     }
 
     // at this point, everything in our 'rowsToRemove' . . .
     this.removeVirtualRows(rowsToRemove);
 
-//    var domRowsChangedFn = this.gridOptionsWrapper.getDOMRowsChangedHandler();
-
-    //Notify outside world that dom rows changed.
-//    if((rowsInserted || rowsToRemove.length > 0) && domRowsChangedFn){
-//        get all currently rendered rows in dom.
-//        var rowsInDOM = [];
-//        Object.keys(that.renderedRows).forEach(function(key) {
-//            rowsInDOM.push(that.renderedRows[key].node.data);
-//        });
-//        domRowsChangedFn(rowsInDOM);
-//    }
-
-    // if we are doing angular compiling, then do digest the scope here
-//    if (this.gridOptionsWrapper.isAngularCompileRows()) {
-        // we do it in a timeout, in case we are already in an apply
-//        setTimeout(function() {
-//            that.$scope.$apply();
-//        }, 0);
-//    }
-
+    // the rest of the processing is done asynchronously, one row at a time, for smoother UX
     setTimeout(function() {
         that.asyncRender();
     }, 0);
@@ -355,10 +329,12 @@ RowRenderer.prototype.asyncRender = function() {
     }
 
     var domRowsChangedFn = this.gridOptionsWrapper.getDOMRowsChangedHandler();
-    //Notify outside world that dom rows changed.
-    if(rowsInserted && domRowsChangedFn){
+    // store list of dom rows changed.
+    if(rowsInserted && domRowsChangedFn) {
+        if (!this.rowsChanged) {
+            this.rowsChanged = [];
+        }
         this.rowsChanged.push(this.renderedRows[rowIndex].node.data);
-//        domRowsChangedFn([this.renderedRows[rowIndex].node.data]);
     }
 
     if (rowsInserted) {
@@ -368,10 +344,13 @@ RowRenderer.prototype.asyncRender = function() {
     }
 
     if (!rowsInserted) {
-        if (this.rowsChanged && this.rowsChanged.length > 0) {
+        // didn't find anything to do, so catch up with final processing
+        if (domRowsChangedFn && this.rowsChanged && this.rowsChanged.length > 0) {
+            // inform the outside world of new rows
             domRowsChangedFn(this.rowsChanged);
             this.rowsChanged = [];
         }
+        // if we are doing angular compiling, then do digest the scope here
         if ( this.gridOptionsWrapper.isAngularCompileRows()) {
             // we do it in a timeout, in case we are already in an apply
             setTimeout(function() {
