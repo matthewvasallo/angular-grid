@@ -67,6 +67,24 @@ RowRenderer.prototype.refreshView = function(refreshFromIndex) {
     this.refreshAllVirtualRows(refreshFromIndex);
 };
 
+RowRenderer.prototype.clearRecycleBin = function() {
+    for (var index = 0; index < this.rowsToReuse.length; index++) {
+        var rowToDiscard = this.rowsToReuse[index];
+        if (rowToDiscard.pinnedElement && this.ePinnedColsContainer) {
+            this.ePinnedColsContainer.removeChild(rowToDiscard.pinnedElement);
+        }
+
+        if (rowToDiscard.bodyElement) {
+            this.eBodyContainer.removeChild(rowToDiscard.bodyElement);
+        }
+
+        if (rowToDiscard.scope) {
+            rowToDiscard.scope.$destroy();
+        }
+    }
+    this.rowsToReuse = [];
+};
+
 RowRenderer.prototype.softRefreshView = function() {
 
     var first = this.firstVirtualRenderedRow;
@@ -177,6 +195,9 @@ RowRenderer.prototype.refreshAllVirtualRows = function(fromIndex) {
     var rowsToRemove = Object.keys(this.renderedRows);
     this.removeVirtualRows(rowsToRemove, fromIndex);
 
+    // don't reuse old rows, because the column definitions may have changed.
+    this.clearRecycleBin();
+
     // add in new rows
     this.drawVirtualRows();
 };
@@ -219,12 +240,10 @@ RowRenderer.prototype.removeVirtualRows = function(rowsToRemove, fromIndex) {
 RowRenderer.prototype.removeVirtualRow = function(indexToRemove) {
     var renderedRow = this.renderedRows[indexToRemove];
     if (renderedRow.pinnedElement && this.ePinnedColsContainer) {
-//        this.ePinnedColsContainer.removeChild(renderedRow.pinnedElement);
         renderedRow.pinnedElement.style.top = "-100px";
     }
 
     if (renderedRow.bodyElement) {
-//        this.eBodyContainer.removeChild(renderedRow.bodyElement);
         renderedRow.bodyElement.style.top = "-100px";
     }
 
@@ -389,6 +408,7 @@ RowRenderer.prototype.insertRow = function(node, rowIndex, mainRowWidth) {
 
     if (this.rowsToReuse.length > 0) {
         renderedRow = this.rowsToReuse.pop();
+        renderedRow.node = node;
         this.renderedRows[rowIndex] = renderedRow;
         this.renderedRowStartEditingListeners[rowIndex] = {};
         if (renderedRow.pinnedElement) {
