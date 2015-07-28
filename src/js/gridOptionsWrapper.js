@@ -28,7 +28,6 @@ GridOptionsWrapper.prototype.isGroupHeaders = function() { return isTrue(this.gr
 GridOptionsWrapper.prototype.isDontUseScrolls = function() { return isTrue(this.gridOptions.dontUseScrolls); };
 GridOptionsWrapper.prototype.isSuppressDescSort = function() { return isTrue(this.gridOptions.suppressDescSort); };
 GridOptionsWrapper.prototype.getRowStyle = function() { return this.gridOptions.rowStyle; };
-GridOptionsWrapper.prototype.isPinnedColAutoExpandWidth = function() { return isTrue(this.gridOptions.isPinnedColAutoExpandWidth); };
 GridOptionsWrapper.prototype.getRowClass = function() { return this.gridOptions.rowClass; };
 GridOptionsWrapper.prototype.getHeaderCellRenderer = function() { return this.gridOptions.headerCellRenderer; };
 GridOptionsWrapper.prototype.getApi = function() { return this.gridOptions.api; };
