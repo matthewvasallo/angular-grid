@@ -310,7 +310,7 @@ RowRenderer.prototype.ensureRowsRendered = function() {
 
     var mainRowWidth = this.columnModel.getBodyContainerWidth();
     var that = this;
-    var rowsInserted = false;
+    var rowsToInsert = false;
 
     // at the end, this array will contain the items we need to remove
     var rowsToRemove = Object.keys(this.renderedRows);
@@ -320,7 +320,8 @@ RowRenderer.prototype.ensureRowsRendered = function() {
         // see if item already there, and if yes, take it out of the 'to remove' array
         if (rowsToRemove.indexOf(rowIndex.toString()) >= 0) {
             rowsToRemove.splice(rowsToRemove.indexOf(rowIndex.toString()), 1);
-            continue;
+        } else {
+            rowsToInsert = true;
         }
     }
 
@@ -328,9 +329,15 @@ RowRenderer.prototype.ensureRowsRendered = function() {
     this.removeVirtualRows(rowsToRemove);
 
     // the rest of the processing is done asynchronously, one row at a time, for smoother UX
-    setTimeout(function() {
-        that.asyncRender();
-    }, 0);
+    if (rowsToInsert) {
+        this.inProgress = this.inProgress ? this.inProgress : 0;
+        if (this.inProgress < this.gridOptionsWrapper.getMaxAsyncInProgress()) {
+            ++this.inProgress;
+            setTimeout(function() {
+                that.asyncRender(that.batch++);
+            }, 0);
+        }
+    }
 };
 
 RowRenderer.prototype.asyncRender = function() {
@@ -370,9 +377,18 @@ RowRenderer.prototype.asyncRender = function() {
 
     if (!rowsInserted) {
         // didn't find anything to do, so catch up with final processing
+        this.inProgress--;
         if (domRowsChangedFn && this.rowsChanged && this.rowsChanged.length > 0) {
             // inform the outside world of new rows
-            domRowsChangedFn(this.rowsChanged);
+            var filteredRows = [];
+            this.rowsChanged.forEach(function(row) {
+                if (row.rowIndex >= that.firstVirtualRenderedRow && row.rowIndex <= that.lastVirtualRenderedRow) {
+                    filteredRows.push(row);
+                }
+            });
+            if (filteredRows.length > 0) {
+                domRowsChangedFn(filteredRows);
+            }
             this.rowsChanged = [];
         }
         // if we are doing angular compiling, then do digest the scope here

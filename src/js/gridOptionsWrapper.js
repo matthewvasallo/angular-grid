@@ -39,6 +39,7 @@ GridOptionsWrapper.prototype.getGroupAggFields = function() { return this.gridOp
 GridOptionsWrapper.prototype.getAllRows = function() { return this.gridOptions.rowData; };
 GridOptionsWrapper.prototype.getDOMRowsChangedHandler = function() { return this.gridOptions.DOMRowsChangedHandler; };
 GridOptionsWrapper.prototype.getKeyMap = function() { return this.gridOptions.keyMap; };
+GridOptionsWrapper.prototype.getMaxAsyncInProgress = function() { return this.gridOptions.maxAsyncInProgress || 1; };
 GridOptionsWrapper.prototype.isGroupUseEntireRow = function() { return isTrue(this.gridOptions.groupUseEntireRow); };
 GridOptionsWrapper.prototype.getGroupColumnDef = function() { return this.gridOptions.groupColumnDef; };
 GridOptionsWrapper.prototype.isAngularCompileRows = function() { return isTrue(this.gridOptions.angularCompileRows); };
