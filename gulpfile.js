@@ -40,6 +40,7 @@ function jsTask() {
         .pipe(uglify())
         .pipe(rename('angular-grid.min.js'))
         .pipe(gulp.dest('../mindtap-static-lib/thirdparty/angular-grid/1.10.1-cl.1'))
+        .pipe(gulp.dest('../mindapp-progress/client/src/app/support'))
         .pipe(gulp.dest('./dist'))
         .pipe(gulp.dest('./docs/dist'));
 }
