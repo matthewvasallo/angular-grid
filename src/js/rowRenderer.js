@@ -366,7 +366,7 @@ RowRenderer.prototype.asyncRender = function() {
         if (!this.rowsChanged) {
             this.rowsChanged = [];
         }
-        this.rowsChanged.push(this.renderedRows[rowIndex].node.data);
+        this.rowsChanged.push(this.renderedRows[rowIndex].node);
     }
 
     if (rowsInserted) {
@@ -382,14 +382,14 @@ RowRenderer.prototype.asyncRender = function() {
             // inform the outside world of new rows
             var filteredRows = [];
             this.rowsChanged.forEach(function(row) {
-                if (row.rowIndex >= that.firstVirtualRenderedRow && row.rowIndex <= that.lastVirtualRenderedRow) {
-                    filteredRows.push(row);
+                if (row.id >= that.firstVirtualRenderedRow && row.id <= that.lastVirtualRenderedRow) {
+                    filteredRows.push(row.data);
                 }
             });
             if (filteredRows.length > 0) {
                 domRowsChangedFn(filteredRows);
             }
-            this.rowsChanged = [];
+            this.rowsChanged = [];od
         }
         // if we are doing angular compiling, then do digest the scope here
         if ( this.gridOptionsWrapper.isAngularCompileRows()) {
