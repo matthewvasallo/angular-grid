@@ -858,19 +858,14 @@ RowRenderer.prototype.createCell = function(isFirstColumn, column, valueGetter, 
         eGridCell.setAttribute("tabindex", "-1");
     }
 
-    var value;
-    if (valueGetter) {
-        value = valueGetter();
-    }
-
     // these are the grid styles, don't change between soft refreshes
     this.addClassesToCell(column, node, eGridCell);
 
-    this.populateAndStyleGridCell(valueGetter, value, eGridCell, isFirstColumn, node, column, rowIndex, $childScope);
+    this.populateAndStyleGridCell(valueGetter, valueGetter(), eGridCell, isFirstColumn, node, column, rowIndex, $childScope);
 
-    this.addCellClickedHandler(eGridCell, node, column, value, rowIndex);
-    this.addCellHoverHandler(eGridCell, node, column, value, rowIndex);
-    this.addCellDoubleClickedHandler(eGridCell, node, column, value, rowIndex, $childScope, isFirstColumn, valueGetter);
+    this.addCellClickedHandler(eGridCell, node, column, valueGetter, rowIndex);
+    this.addCellHoverHandler(eGridCell, node, column, valueGetter, rowIndex);
+    this.addCellDoubleClickedHandler(eGridCell, node, column, rowIndex, $childScope, isFirstColumn, valueGetter);
 
     this.addCellNavigationHandler(eGridCell, rowIndex, column, node);
 
@@ -1094,7 +1089,7 @@ RowRenderer.prototype.populateGridCell = function(eGridCell, isFirstColumn, node
     this.putDataIntoCell(column, value, valueGetter, node, $childScope, eSpanWithValue, eGridCell, rowIndex, refreshCellFunction);
 };
 
-RowRenderer.prototype.addCellDoubleClickedHandler = function(eGridCell, node, column, value, rowIndex, $childScope, isFirstColumn, valueGetter) {
+RowRenderer.prototype.addCellDoubleClickedHandler = function(eGridCell, node, column, rowIndex, $childScope, isFirstColumn, valueGetter) {
     var that = this;
     var colDef = column.colDef;
     eGridCell.addEventListener("dblclick", function(event) {
@@ -1102,7 +1097,7 @@ RowRenderer.prototype.addCellDoubleClickedHandler = function(eGridCell, node, co
             var paramsForGrid = {
                 node: node,
                 data: node.data,
-                value: value,
+                value: valueGetter(),
                 rowIndex: rowIndex,
                 colDef: colDef,
                 event: event,
@@ -1115,7 +1110,7 @@ RowRenderer.prototype.addCellDoubleClickedHandler = function(eGridCell, node, co
             var paramsForColDef = {
                 node: node,
                 data: node.data,
-                value: value,
+                value: valueGetter(),
                 rowIndex: rowIndex,
                 colDef: colDef,
                 event: event,
@@ -1130,7 +1125,7 @@ RowRenderer.prototype.addCellDoubleClickedHandler = function(eGridCell, node, co
     });
 };
 
-RowRenderer.prototype.addCellClickedHandler = function(eGridCell, node, column, value, rowIndex) {
+RowRenderer.prototype.addCellClickedHandler = function(eGridCell, node, column, valueGetter, rowIndex) {
     var colDef = column.colDef;
     var that = this;
     eGridCell.addEventListener("click", function(event) {
@@ -1145,7 +1140,7 @@ RowRenderer.prototype.addCellClickedHandler = function(eGridCell, node, column, 
             var paramsForGrid = {
                 node: node,
                 data: node.data,
-                value: value,
+                value: valueGetter(),
                 rowIndex: rowIndex,
                 colDef: colDef,
                 event: event,
@@ -1158,7 +1153,7 @@ RowRenderer.prototype.addCellClickedHandler = function(eGridCell, node, column, 
             var paramsForColDef = {
                 node: node,
                 data: node.data,
-                value: value,
+                value: valueGetter(),
                 rowIndex: rowIndex,
                 colDef: colDef,
                 event: event,
@@ -1170,7 +1165,7 @@ RowRenderer.prototype.addCellClickedHandler = function(eGridCell, node, column, 
     });
 };
 
-RowRenderer.prototype.addCellHoverHandler = function(eGridCell, node, column, value, rowIndex) {
+RowRenderer.prototype.addCellHoverHandler = function(eGridCell, node, column, valueGetter, rowIndex) {
     var that = this;
     var colDef = column.colDef;
     var hoverHandler = colDef.cellHoverHandler;
@@ -1183,7 +1178,7 @@ RowRenderer.prototype.addCellHoverHandler = function(eGridCell, node, column, va
                 entering: true,
                 leaving: false,
                 rowIndex: rowIndex,
-                value: value,
+                value: valueGetter(),
                 context: that.gridOptionsWrapper.getContext(),
                 api: that.gridOptionsWrapper.getApi()
             };
@@ -1196,7 +1191,7 @@ RowRenderer.prototype.addCellHoverHandler = function(eGridCell, node, column, va
                 entering: false,
                 leaving: true,
                 rowIndex: rowIndex,
-                value: value,
+                value: valueGetter(),
                 context: that.gridOptionsWrapper.getContext(),
                 api: that.gridOptionsWrapper.getApi()
             };
