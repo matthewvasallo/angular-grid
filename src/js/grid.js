@@ -428,6 +428,10 @@ Grid.prototype.addApi = function() {
             return that.gridPanel.eBodyViewport.scrollLeft;
         },
         // HB Extension
+        setBodyScrollLeft: function(position) {
+            that.gridPanel.eBodyViewport.scrollLeft = position;
+        },
+        // HB Extension
         getOffsetForColumnIndex: function(colIndex) {
             return that.columnController.getModel().getOffsetForColumnIndex(colIndex);
         },
