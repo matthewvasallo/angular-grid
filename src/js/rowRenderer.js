@@ -389,7 +389,7 @@ RowRenderer.prototype.asyncRender = function() {
             if (filteredRows.length > 0) {
                 domRowsChangedFn(filteredRows);
             }
-            this.rowsChanged = [];od
+            this.rowsChanged = [];
         }
         // if we are doing angular compiling, then do digest the scope here
         if ( this.gridOptionsWrapper.isAngularCompileRows()) {
