@@ -191,6 +191,10 @@ RowRenderer.prototype.rowDataChanged = function(rows) {
 };
 
 RowRenderer.prototype.refreshAllVirtualRows = function(fromIndex) {
+    // removing the rows can make the browser lose the scroll position;
+    // save it so we can restore it when we next insert a row
+    this.bodyScrollPosToRestore = this.gridPanel.getBodyViewport().scrollLeft;
+
     // remove all current virtual rows, as they have old data
     var rowsToRemove = Object.keys(this.renderedRows);
     this.removeVirtualRows(rowsToRemove, fromIndex);
@@ -475,6 +479,12 @@ RowRenderer.prototype.insertRow = function(node, rowIndex, mainRowWidth) {
     //try compiling as we insert rows
     renderedRow.pinnedElement = this.compileAndAdd(this.ePinnedColsContainer, rowIndex, ePinnedRow, newChildScope);
     renderedRow.bodyElement = this.compileAndAdd(this.eBodyContainer, rowIndex, eMainRow, newChildScope);
+
+    // now that there is content again, restore any save scrolled position
+    if (this.bodyScrollPosToRestore) {
+        this.gridPanel.getBodyViewport().scrollLeft = this.bodyScrollPosToRestore;
+        this.bodyScrollPosToRestore = undefined;
+    }
 };
 
 // if group is a footer, always show the data.

@@ -425,11 +425,11 @@ Grid.prototype.addApi = function() {
         },
         // HB Extension
         getBodyScrollLeft: function() {
-            return that.gridPanel.eBodyViewport.scrollLeft;
+            return that.gridPanel.getBodyViewport().scrollLeft;
         },
         // HB Extension
         setBodyScrollLeft: function(position) {
-            that.gridPanel.eBodyViewport.scrollLeft = position;
+            that.gridPanel.getBodyViewport().scrollLeft = position;
         },
         // HB Extension
         getOffsetForColumnIndex: function(colIndex) {
