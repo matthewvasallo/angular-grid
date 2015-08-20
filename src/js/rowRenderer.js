@@ -67,20 +67,23 @@ RowRenderer.prototype.refreshView = function(refreshFromIndex) {
     this.refreshAllVirtualRows(refreshFromIndex);
 };
 
+RowRenderer.prototype.discardRowDOM = function(rowToDiscard) {
+    if (rowToDiscard.pinnedElement && this.ePinnedColsContainer) {
+        this.ePinnedColsContainer.removeChild(rowToDiscard.pinnedElement);
+    }
+
+    if (rowToDiscard.bodyElement) {
+        this.eBodyContainer.removeChild(rowToDiscard.bodyElement);
+    }
+
+    if (rowToDiscard.scope) {
+        rowToDiscard.scope.$destroy();
+    }
+};
+
 RowRenderer.prototype.clearRecycleBin = function() {
     for (var index = 0; index < this.rowsToReuse.length; index++) {
-        var rowToDiscard = this.rowsToReuse[index];
-        if (rowToDiscard.pinnedElement && this.ePinnedColsContainer) {
-            this.ePinnedColsContainer.removeChild(rowToDiscard.pinnedElement);
-        }
-
-        if (rowToDiscard.bodyElement) {
-            this.eBodyContainer.removeChild(rowToDiscard.bodyElement);
-        }
-
-        if (rowToDiscard.scope) {
-            rowToDiscard.scope.$destroy();
-        }
+        this.discardRowDOM(this.rowsToReuse[index])
     }
     this.rowsToReuse = [];
 };
@@ -263,7 +266,11 @@ RowRenderer.prototype.removeVirtualRow = function(indexToRemove) {
     delete this.renderedRows[indexToRemove];
     delete this.renderedRowStartEditingListeners[indexToRemove];
 
-    this.rowsToReuse.push(renderedRow);
+    if (this.gridOptionsWrapper.getUseRowRecycling()) {
+        this.rowsToReuse.push(renderedRow);
+    } else {
+        this.discardRowDOM(renderedRow);
+    }
 };
 
 RowRenderer.prototype.drawVirtualRows = function() {
