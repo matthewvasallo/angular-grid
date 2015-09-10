@@ -1390,6 +1390,12 @@ RowRenderer.prototype.startEditing = function(eGridCell, column, node, $childSco
             }
         }
     });
+
+    var visibleColumns = this.columnModel.getDisplayedColumns();
+    var index = visibleColumns.indexOf(column);
+    if (index) {
+        this.gridPanel.ensureColIndexVisible(index, column.colDef.editWidth);
+    }
 };
 
 RowRenderer.prototype.findNextByParameters = function(rowIndex, column, params) {
@@ -1444,16 +1450,17 @@ RowRenderer.prototype.findNextByParameters = function(rowIndex, column, params) 
 
         var coordinate = position[which];
         var other = which === "x" ? "y" : "x";
+        var advanceAtEnd = params.advanceAtEnd && other.max > other.min;
 
         coordinate.current += delta;
         if (coordinate.current < coordinate.min) {
             coordinate.current = coordinate.max;
-            if (params.advanceAtEnd) {
+            if (advanceAtEnd) {
                 adjustPosition(other, -1);
             }
         } else if (coordinate.current > coordinate.max) {
             coordinate.current = coordinate.min;
-            if (params.advanceAtEnd) {
+            if (advanceAtEnd) {
                 adjustPosition(other, 1);
             }
         }

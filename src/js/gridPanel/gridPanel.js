@@ -67,7 +67,7 @@ GridPanel.prototype.ensureIndexVisible = function(index) {
     // otherwise, row is already in view, so do nothing
 };
 
-GridPanel.prototype.ensureColIndexVisible = function(index) {
+GridPanel.prototype.ensureColIndexVisible = function(index, widthToUse) {
     if (typeof index !== 'number') {
         console.warn('col index must be a number: ' + index);
         return;
@@ -94,7 +94,7 @@ GridPanel.prototype.ensureColIndexVisible = function(index) {
         colLeftPixel += columns[i].actualWidth;
     }
 
-    var colRightPixel = colLeftPixel + column.actualWidth;
+    var colRightPixel = colLeftPixel + (widthToUse || column.actualWidth);
 
     var viewportLeftPixel = this.eBodyViewport.scrollLeft;
     var viewportWidth = this.eBodyViewport.offsetWidth;
