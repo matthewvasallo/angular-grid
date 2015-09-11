@@ -1452,7 +1452,7 @@ RowRenderer.prototype.findNextByParameters = function(rowIndex, column, params) 
 
         var coordinate = position[which];
         var other = which === "x" ? "y" : "x";
-        var advanceAtEnd = params.advanceAtEnd && other.max > other.min;
+        var advanceAtEnd = params.advanceAtEnd && position[other].max > position[other].min;
 
         coordinate.current += delta;
         if (coordinate.current < coordinate.min) {
