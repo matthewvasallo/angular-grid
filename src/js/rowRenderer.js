@@ -1372,11 +1372,11 @@ RowRenderer.prototype.startEditing = function(eGridCell, column, node, $childSco
                 that.stopEditing(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter, params.abortEdit);
                 if (! (params.abortEdit || params.endEdit)) {
                     var nextCell = that.findNextByParameters(rowIndex, column, params);
+                    that.gridPanel.ensureIndexVisible(nextCell.rowIndex);
                     if (nextCell.rowIndex < that.firstVirtualRenderedRow || nextCell.rowIndex > that.lastVirtualRenderedRow) {
                         that.cellBeingEdited = {};
                         that.cellBeingEdited.rowIndex = nextCell.rowIndex;
                         that.cellBeingEdited.columnIndex = nextCell.column.colId;
-                        that.gridPanel.ensureIndexVisible(nextCell.rowIndex);
                     } else {
                         var rowFcns = that.renderedRowStartEditingListeners[nextCell.rowIndex];
                         var editFcn = rowFcns ? rowFcns[nextCell.column.colId] : null;
