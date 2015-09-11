@@ -162,7 +162,7 @@ RowRenderer.prototype.refreshByRow = function(rowIndex) {
             var column = columns[columnIndex];
             var eGridCell = renderedRow.eCells[column.colId];
             if (eGridCell) {
-                this.softRefreshCell(eGridCell, columnIndex == 0, renderedRow.node, column, rowIndex, null);
+                this.softRefreshCell(eGridCell, columnIndex == 0, renderedRow.node, column, null, rowIndex);
             }
         }
     }
@@ -878,16 +878,6 @@ RowRenderer.prototype.createCell = function(isFirstColumn, column, valueGetter, 
     // these are the grid styles, don't change between soft refreshes
     this.addClassesToCell(column, node, eGridCell);
 
-    this.populateAndStyleGridCell(valueGetter, valueGetter(), eGridCell, isFirstColumn, node, column, rowIndex, $childScope);
-
-    this.addCellClickedHandler(eGridCell, node, column, valueGetter, rowIndex);
-    this.addCellHoverHandler(eGridCell, node, column, valueGetter, rowIndex);
-    this.addCellDoubleClickedHandler(eGridCell, node, column, rowIndex, $childScope, isFirstColumn, valueGetter);
-
-    this.addCellNavigationHandler(eGridCell, rowIndex, column, node);
-
-    eGridCell.style.width = utils.formatWidth(column.actualWidth);
-
     // add the 'start editing' call to the chain of editors
     var startEdit = function() {
         if (that.isCellEditable(column.colDef, node)) {
@@ -899,9 +889,15 @@ RowRenderer.prototype.createCell = function(isFirstColumn, column, valueGetter, 
     };
     this.renderedRowStartEditingListeners[rowIndex][column.colId] = startEdit;
 
-    if (this.cellBeingEdited && this.cellBeingEdited.columnIndex === column.colId && this.cellBeingEdited.rowIndex === rowIndex) {
-        startEdit();
-    }
+    this.populateAndStyleGridCell(valueGetter, valueGetter(), eGridCell, isFirstColumn, node, column, rowIndex, $childScope);
+
+    this.addCellClickedHandler(eGridCell, node, column, valueGetter, rowIndex);
+    this.addCellHoverHandler(eGridCell, node, column, valueGetter, rowIndex);
+    this.addCellDoubleClickedHandler(eGridCell, node, column, rowIndex, $childScope, isFirstColumn, valueGetter);
+
+    this.addCellNavigationHandler(eGridCell, rowIndex, column, node);
+
+    eGridCell.style.width = utils.formatWidth(column.actualWidth);
 
     return eGridCell;
 };
@@ -1082,6 +1078,12 @@ RowRenderer.prototype.populateAndStyleGridCell = function(valueGetter, value, eG
 };
 
 RowRenderer.prototype.populateGridCell = function(eGridCell, isFirstColumn, node, column, rowIndex, value, valueGetter, $childScope) {
+    if (this.cellBeingEdited && this.cellBeingEdited.columnIndex === column.colId && this.cellBeingEdited.rowIndex === rowIndex) {
+        if (this.renderedRowStartEditingListeners[rowIndex][column.colId]()) {
+            return;
+        }
+    }
+
     var eCellWrapper = document.createElement('span');
     utils.addCssClass(eCellWrapper, "ag-cell-wrapper");
     eGridCell.appendChild(eCellWrapper);
