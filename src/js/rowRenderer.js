@@ -1184,37 +1184,42 @@ RowRenderer.prototype.addCellClickedHandler = function(eGridCell, node, column, 
     });
 };
 
+RowRenderer.prototype.cellEnterExitHandler = function(entering, column, valueGetter, rowIndex, event) {
+    var colDef = column.colDef;
+    var hoverHandler = colDef.cellHoverHandler;
+
+    if (hoverHandler) {
+        var hoverParams = {
+            colDef: colDef,
+            event: event || new CustomEvent("Dummy"),
+            entering: entering,
+            leaving: !entering,
+            rowIndex: rowIndex,
+            value: valueGetter(),
+            context: this.gridOptionsWrapper.getContext(),
+            api: this.gridOptionsWrapper.getApi()
+        };
+        hoverHandler(hoverParams);
+    }
+};
+
 RowRenderer.prototype.addCellHoverHandler = function(eGridCell, node, column, valueGetter, rowIndex) {
     var that = this;
     var colDef = column.colDef;
     var hoverHandler = colDef.cellHoverHandler;
 
     if (hoverHandler) {
+        var callHandler = function(entering, event) {
+            if (that.editingCell) {
+                return;
+            }
+            that.cellEnterExitHandler(entering, column, valueGetter, rowIndex, event);
+        };
         eGridCell.addEventListener("mouseenter", function(e) {
-            var hoverParams = {
-                colDef: colDef,
-                event: e,
-                entering: true,
-                leaving: false,
-                rowIndex: rowIndex,
-                value: valueGetter(),
-                context: that.gridOptionsWrapper.getContext(),
-                api: that.gridOptionsWrapper.getApi()
-            };
-            hoverHandler(hoverParams);
+            callHandler(true, e);
         });
         eGridCell.addEventListener("mouseleave", function(e) {
-            var hoverParams = {
-                colDef: colDef,
-                event: e,
-                entering: false,
-                leaving: true,
-                rowIndex: rowIndex,
-                value: valueGetter(),
-                context: that.gridOptionsWrapper.getContext(),
-                api: that.gridOptionsWrapper.getApi()
-            };
-            hoverHandler(hoverParams);
+            callHandler(false, e);
         });
     }
 };
@@ -1244,6 +1249,7 @@ RowRenderer.prototype.isCellEditable = function(colDef, node) {
 };
 
 RowRenderer.prototype.stopEditing = function(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter, abortEdit) {
+    this.cellEnterExitHandler(false, column, valueGetter, rowIndex);
     this.editingCell = false;
     this.cellBeingEdited = null;
     var newValue = eInput.value;
@@ -1320,6 +1326,7 @@ RowRenderer.prototype.startEditing = function(eGridCell, column, node, $childSco
     this.editingCell = true;
     utils.removeAllChildren(eGridCell);
     var eInput, nodeToAppend;
+    that.cellEnterExitHandler(true, column, valueGetter, rowIndex);
 
     if (column.colDef.editCellRenderer) {
         nodeToAppend = document.createElement('span');
