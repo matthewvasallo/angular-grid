@@ -1191,7 +1191,7 @@ RowRenderer.prototype.cellEnterExitHandler = function(entering, column, valueGet
     if (hoverHandler) {
         var hoverParams = {
             colDef: colDef,
-            event: event || new CustomEvent("Dummy"),
+            event: event || {},
             entering: entering,
             leaving: !entering,
             rowIndex: rowIndex,
