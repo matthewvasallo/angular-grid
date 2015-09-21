@@ -146,9 +146,11 @@ RowRenderer.prototype.refreshByRowColumn = function(rowIndex, columnIndex) {
     var renderedRow = this.renderedRows[rowIndex];
     if (renderedRow) {
         var column = this.columnModel.getAllColumns()[columnIndex];
-        var eGridCell = renderedRow.eCells[column.colId];
-        if (eGridCell) {
-            this.softRefreshCell(eGridCell, columnIndex == 0, renderedRow.node, column, rowIndex, null);
+        if (column) {
+            var eGridCell = renderedRow.eCells[column.colId];
+            if (eGridCell) {
+                this.softRefreshCell(eGridCell, columnIndex == 0, renderedRow.node, column, rowIndex, null);
+            }
         }
     }
 };
