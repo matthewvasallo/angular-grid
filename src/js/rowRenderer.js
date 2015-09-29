@@ -1251,11 +1251,29 @@ RowRenderer.prototype.isCellEditable = function(colDef, node) {
 };
 
 RowRenderer.prototype.stopEditing = function(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter, abortEdit) {
+    var newValue = eInput.value;
+    var colDef = column.colDef;
+
+    var paramsForCallbacks = {
+        node: node,
+        data: node.data,
+        oldValue: node.data[colDef.field],
+        newValue: newValue,
+        rowIndex: rowIndex,
+        colDef: colDef,
+        api: this.gridOptionsWrapper.getApi(),
+        context: this.gridOptionsWrapper.getContext()
+    };
+
+    if (!abortEdit && colDef.newValueValidator) {
+        if (!colDef.newValueValidator(paramsForCallbacks)) {
+            return false;
+        }
+    }
+
     this.cellEnterExitHandler(false, column, valueGetter, rowIndex);
     this.editingCell = false;
     this.cellBeingEdited = null;
-    var newValue = eInput.value;
-    var colDef = column.colDef;
 
     //If we don't remove the blur listener first, we get:
     //Uncaught NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is no longer a child of this node. Perhaps it was moved in a 'blur' event handler?
@@ -1268,16 +1286,6 @@ RowRenderer.prototype.stopEditing = function(eGridCell, column, node, $childScop
         newValue = valueGetter();
     } else {
         // process new value
-        var paramsForCallbacks = {
-            node: node,
-            data: node.data,
-            oldValue: node.data[colDef.field],
-            newValue: newValue,
-            rowIndex: rowIndex,
-            colDef: colDef,
-            api: this.gridOptionsWrapper.getApi(),
-            context: this.gridOptionsWrapper.getContext()
-        };
 
         if (colDef.newValueHandler) {
             colDef.newValueHandler(paramsForCallbacks);
@@ -1300,6 +1308,8 @@ RowRenderer.prototype.stopEditing = function(eGridCell, column, node, $childScop
     }
 
     this.populateAndStyleGridCell(valueGetter, newValue, eGridCell, isFirstColumn, node, column, rowIndex, $childScope);
+
+    return true;
 };
 
 RowRenderer.prototype.useEditCellRenderer = function(column, node, $childScope, rowIndex, valueGetter) {
@@ -1378,19 +1388,20 @@ RowRenderer.prototype.startEditing = function(eGridCell, column, node, $childSco
         if (keyDefinition) {
             var params = keyDefinition[event.shiftKey ? "shift" : "noShift"];
             if (params) {
-                that.stopEditing(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter, params.abortEdit);
-                if (! (params.abortEdit || params.endEdit)) {
-                    var nextCell = that.findNextByParameters(rowIndex, column, params);
-                    that.gridPanel.ensureIndexVisible(nextCell.rowIndex);
-                    if (nextCell.rowIndex < that.firstVirtualRenderedRow || nextCell.rowIndex > that.lastVirtualRenderedRow) {
-                        that.cellBeingEdited = {};
-                        that.cellBeingEdited.rowIndex = nextCell.rowIndex;
-                        that.cellBeingEdited.columnIndex = nextCell.column.colId;
-                    } else {
-                        var rowFcns = that.renderedRowStartEditingListeners[nextCell.rowIndex];
-                        var editFcn = rowFcns ? rowFcns[nextCell.column.colId] : null;
-                        if (editFcn) {
-                            editFcn();
+                if (that.stopEditing(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter, params.abortEdit)) {
+                    if (! (params.abortEdit || params.endEdit)) {
+                        var nextCell = that.findNextByParameters(rowIndex, column, params);
+                        that.gridPanel.ensureIndexVisible(nextCell.rowIndex);
+                        if (nextCell.rowIndex < that.firstVirtualRenderedRow || nextCell.rowIndex > that.lastVirtualRenderedRow) {
+                            that.cellBeingEdited = {};
+                            that.cellBeingEdited.rowIndex = nextCell.rowIndex;
+                            that.cellBeingEdited.columnIndex = nextCell.column.colId;
+                        } else {
+                            var rowFcns = that.renderedRowStartEditingListeners[nextCell.rowIndex];
+                            var editFcn = rowFcns ? rowFcns[nextCell.column.colId] : null;
+                            if (editFcn) {
+                                editFcn();
+                            }
                         }
                     }
                 }
