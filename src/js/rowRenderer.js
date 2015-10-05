@@ -1250,7 +1250,8 @@ RowRenderer.prototype.isCellEditable = function(colDef, node) {
     return false;
 };
 
-RowRenderer.prototype.stopEditing = function(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter, abortEdit) {
+RowRenderer.prototype.stopEditing = function(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex,
+                                             isFirstColumn, valueGetter, abortEdit, abortIfInvalid) {
     var newValue = eInput.value;
     var colDef = column.colDef;
 
@@ -1267,7 +1268,10 @@ RowRenderer.prototype.stopEditing = function(eGridCell, column, node, $childScop
 
     if (!abortEdit && colDef.newValueValidator) {
         if (!colDef.newValueValidator(paramsForCallbacks)) {
-            return false;
+            if (!abortIfInvalid) {
+                return false;
+            }
+            abortEdit = true;
         }
     }
 
@@ -1373,7 +1377,7 @@ RowRenderer.prototype.startEditing = function(eGridCell, column, node, $childSco
     eInput.select();
 
     var blurListener = function() {
-        that.stopEditing(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter, false);
+        that.stopEditing(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter, false, true);
     };
 
     //stop entering if we loose focus
@@ -1388,7 +1392,7 @@ RowRenderer.prototype.startEditing = function(eGridCell, column, node, $childSco
         if (keyDefinition) {
             var params = keyDefinition[event.shiftKey ? "shift" : "noShift"];
             if (params) {
-                if (that.stopEditing(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter, params.abortEdit)) {
+                if (that.stopEditing(eGridCell, column, node, $childScope, eInput, blurListener, rowIndex, isFirstColumn, valueGetter, params.abortEdit, false)) {
                     if (! (params.abortEdit || params.endEdit)) {
                         var nextCell = that.findNextByParameters(rowIndex, column, params);
                         that.gridPanel.ensureIndexVisible(nextCell.rowIndex);
