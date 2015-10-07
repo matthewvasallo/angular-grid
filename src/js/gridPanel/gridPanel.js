@@ -262,6 +262,25 @@ GridPanel.prototype.addScrollListener = function() {
         that.ePinnedColsViewport.scrollTop = 0;
     });
 
+    this.ePinnedColsViewport.addEventListener("wheel", function(event) {
+        if (event.deltaY !== 0) {
+            var newTopPosition = lastTopPosition + event.deltaY;
+            if (newTopPosition < 0) {
+                newTopPosition = 0;
+            }
+            var maxOffset = that.ePinnedColsViewport.scrollHeight - that.ePinnedColsViewport.clientHeight;
+            if (newTopPosition > maxOffset) {
+                newTopPosition = maxOffset;
+            }
+            lastTopPosition = newTopPosition;
+            that.scrollPinned(newTopPosition);
+            that.eBodyViewport.scrollTop = newTopPosition;
+            that.rowRenderer.drawVirtualRows();
+        }
+
+        event.preventDefault();
+        return false;
+    });
 };
 
 GridPanel.prototype.scrollHeader = function(bodyLeftPosition) {
