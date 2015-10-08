@@ -122,6 +122,9 @@ RowRenderer.prototype.softRefreshView = function() {
 };
 
 RowRenderer.prototype.softRefreshCell = function(eGridCell, isFirstColumn, node, column, scope, rowIndex) {
+    if (this.cellBeingEdited && this.cellBeingEdited.columnIndex === column.colId && this.cellBeingEdited.rowIndex === rowIndex) {
+        return;
+    }
 
     utils.removeAllChildren(eGridCell);
 
@@ -149,7 +152,7 @@ RowRenderer.prototype.refreshByRowColumn = function(rowIndex, columnIndex) {
         if (column) {
             var eGridCell = renderedRow.eCells[column.colId];
             if (eGridCell) {
-                this.softRefreshCell(eGridCell, columnIndex == 0, renderedRow.node, column, rowIndex, null);
+                this.softRefreshCell(eGridCell, columnIndex == 0, renderedRow.node, column, null, rowIndex);
             }
         }
     }
@@ -1340,6 +1343,10 @@ RowRenderer.prototype.useEditCellRenderer = function(column, node, $childScope, 
 RowRenderer.prototype.startEditing = function(eGridCell, column, node, $childScope, rowIndex, isFirstColumn, valueGetter) {
     var that = this;
     this.editingCell = true;
+    this.cellBeingEdited = {
+        rowIndex: rowIndex,
+        columnIndex: column.colId
+    };
     utils.removeAllChildren(eGridCell);
     var eInput, nodeToAppend;
     that.cellEnterExitHandler(true, column, valueGetter, rowIndex);
