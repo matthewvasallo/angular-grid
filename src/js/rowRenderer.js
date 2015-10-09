@@ -250,6 +250,13 @@ RowRenderer.prototype.removeVirtualRows = function(rowsToRemove, fromIndex) {
 };
 
 RowRenderer.prototype.removeVirtualRow = function(indexToRemove) {
+    // generally the blur handler turns off editing before this is triggered,
+    // but just in case, it's better to keep an extra row floating around than
+    // to destroy the cell being edited w/o leaving edit mode.
+    if (this.cellBeingEdited && this.cellBeingEdited.rowIndex === indexToRemove) {
+        return;
+    }
+
     var renderedRow = this.renderedRows[indexToRemove];
     if (renderedRow.pinnedElement && this.ePinnedColsContainer) {
         renderedRow.pinnedElement.style.top = "-100px";
@@ -1083,7 +1090,7 @@ RowRenderer.prototype.populateAndStyleGridCell = function(valueGetter, value, eG
 };
 
 RowRenderer.prototype.populateGridCell = function(eGridCell, isFirstColumn, node, column, rowIndex, value, valueGetter, $childScope) {
-    if (this.cellBeingEdited && this.cellBeingEdited.columnIndex === column.colId && this.cellBeingEdited.rowIndex === rowIndex) {
+    if (this.cellToBeEdited && this.cellToBeEdited.columnIndex === column.colId && this.cellToBeEdited.rowIndex === rowIndex) {
         if (this.renderedRowStartEditingListeners[rowIndex][column.colId]()) {
             return;
         }
@@ -1280,7 +1287,8 @@ RowRenderer.prototype.stopEditing = function(eGridCell, column, node, $childScop
 
     this.cellEnterExitHandler(false, column, valueGetter, rowIndex);
     this.editingCell = false;
-    this.cellBeingEdited = null;
+    delete this.cellBeingEdited;
+    delete this.cellToBeEdited;
 
     //If we don't remove the blur listener first, we get:
     //Uncaught NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is no longer a child of this node. Perhaps it was moved in a 'blur' event handler?
@@ -1347,6 +1355,7 @@ RowRenderer.prototype.startEditing = function(eGridCell, column, node, $childSco
         rowIndex: rowIndex,
         columnIndex: column.colId
     };
+    delete this.cellToBeEdited;
     utils.removeAllChildren(eGridCell);
     var eInput, nodeToAppend;
     that.cellEnterExitHandler(true, column, valueGetter, rowIndex);
@@ -1403,16 +1412,14 @@ RowRenderer.prototype.startEditing = function(eGridCell, column, node, $childSco
                     if (! (params.abortEdit || params.endEdit)) {
                         var nextCell = that.findNextByParameters(rowIndex, column, params);
                         that.gridPanel.ensureIndexVisible(nextCell.rowIndex);
-                        if (nextCell.rowIndex < that.firstVirtualRenderedRow || nextCell.rowIndex > that.lastVirtualRenderedRow) {
-                            that.cellBeingEdited = {};
-                            that.cellBeingEdited.rowIndex = nextCell.rowIndex;
-                            that.cellBeingEdited.columnIndex = nextCell.column.colId;
-                        } else {
-                            var rowFcns = that.renderedRowStartEditingListeners[nextCell.rowIndex];
-                            var editFcn = rowFcns ? rowFcns[nextCell.column.colId] : null;
-                            if (editFcn) {
-                                editFcn();
-                            }
+                        that.cellToBeEdited = {
+                            rowIndex: nextCell.rowIndex,
+                            columnIndex: nextCell.column.colId
+                        };
+                        var rowFcns = that.renderedRowStartEditingListeners[nextCell.rowIndex];
+                        var editFcn = rowFcns ? rowFcns[nextCell.column.colId] : null;
+                        if (editFcn) {
+                            editFcn();
                         }
                     }
                 }
