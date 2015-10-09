@@ -35,11 +35,11 @@ function groupCellRendererFactory(gridOptionsWrapper, selectionRendererFactory) 
         // the theme set, which will make things look 'not aligned' for the
         // first group level.
         if (node.footer || node.level > 0) {
-            var paddingPx = node.level * 10;
+            var paddingPx = node.level * gridOptionsWrapper.getGroupIndentPerLevel();
             if (node.footer) {
-                paddingPx += 10;
+                paddingPx += gridOptionsWrapper.getGroupIndentPerLevel();
             } else if (!node.group) {
-                paddingPx += 5;
+                paddingPx += gridOptionsWrapper.getLeafNodeIndent();
             }
             eGroupCell.style.paddingLeft = paddingPx + 'px';
         }
