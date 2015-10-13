@@ -29,8 +29,6 @@ RowRenderer.prototype.init = function(gridOptions, columnModel, gridOptionsWrapp
     // [scope, bodyRow, pinnedRow, rowData]
     this.renderedRows = {};
 
-    this.rowsToReuse = [];
-
     this.renderedRowStartEditingListeners = {};
 
     this.editingCell = false; //gets set to true when editing a cell
@@ -65,27 +63,6 @@ RowRenderer.prototype.refreshView = function(refreshFromIndex) {
     }
 
     this.refreshAllVirtualRows(refreshFromIndex);
-};
-
-RowRenderer.prototype.discardRowDOM = function(rowToDiscard) {
-    if (rowToDiscard.pinnedElement && this.ePinnedColsContainer) {
-        this.ePinnedColsContainer.removeChild(rowToDiscard.pinnedElement);
-    }
-
-    if (rowToDiscard.bodyElement) {
-        this.eBodyContainer.removeChild(rowToDiscard.bodyElement);
-    }
-
-    if (rowToDiscard.scope) {
-        rowToDiscard.scope.$destroy();
-    }
-};
-
-RowRenderer.prototype.clearRecycleBin = function() {
-    for (var index = 0; index < this.rowsToReuse.length; index++) {
-        this.discardRowDOM(this.rowsToReuse[index])
-    }
-    this.rowsToReuse = [];
 };
 
 RowRenderer.prototype.softRefreshView = function() {
@@ -207,9 +184,6 @@ RowRenderer.prototype.refreshAllVirtualRows = function(fromIndex) {
     var rowsToRemove = Object.keys(this.renderedRows);
     this.removeVirtualRows(rowsToRemove, fromIndex);
 
-    // don't reuse old rows, because the column definitions may have changed.
-    this.clearRecycleBin();
-
     // add in new rows
     this.drawVirtualRows();
 };
@@ -259,11 +233,11 @@ RowRenderer.prototype.removeVirtualRow = function(indexToRemove) {
 
     var renderedRow = this.renderedRows[indexToRemove];
     if (renderedRow.pinnedElement && this.ePinnedColsContainer) {
-        renderedRow.pinnedElement.style.top = "-100px";
+        this.ePinnedColsContainer.removeChild(renderedRow.pinnedElement);
     }
 
     if (renderedRow.bodyElement) {
-        renderedRow.bodyElement.style.top = "-100px";
+        this.eBodyContainer.removeChild(renderedRow.bodyElement);
     }
 
     if (renderedRow.scope) {
@@ -277,12 +251,6 @@ RowRenderer.prototype.removeVirtualRow = function(indexToRemove) {
 
     delete this.renderedRows[indexToRemove];
     delete this.renderedRowStartEditingListeners[indexToRemove];
-
-    if (this.gridOptionsWrapper.getUseRowRecycling()) {
-        this.rowsToReuse.push(renderedRow);
-    } else {
-        this.discardRowDOM(renderedRow);
-    }
 };
 
 RowRenderer.prototype.drawVirtualRows = function() {
@@ -357,7 +325,7 @@ RowRenderer.prototype.ensureRowsRendered = function() {
         if (this.inProgress < this.gridOptionsWrapper.getMaxAsyncInProgress()) {
             ++this.inProgress;
             setTimeout(function() {
-                that.asyncRender(that.batch++);
+                that.asyncRender();
             }, 0);
         }
     }
@@ -443,22 +411,7 @@ RowRenderer.prototype.insertRow = function(node, rowIndex, mainRowWidth) {
 
     eMainRow.style.width = mainRowWidth + "px";
 
-    var renderedRow;
-
-    if (this.rowsToReuse.length > 0) {
-        renderedRow = this.rowsToReuse.pop();
-        renderedRow.node = node;
-        this.renderedRows[rowIndex] = renderedRow;
-        this.renderedRowStartEditingListeners[rowIndex] = {};
-        if (renderedRow.pinnedElement) {
-            this.styleRowContainer(renderedRow.pinnedElement, rowIndex, node, rowIsAGroup, newChildScope);
-        }
-        this.styleRowContainer(renderedRow.bodyElement, rowIndex, node, rowIsAGroup, newChildScope);
-        this.refreshByRow(rowIndex);
-        return;
-    }
-
-    renderedRow = {
+    var renderedRow = {
         scope: newChildScope,
         node: node,
         rowIndex: rowIndex,
