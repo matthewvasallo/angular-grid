@@ -262,6 +262,30 @@ GridPanel.prototype.addScrollListener = function() {
         that.ePinnedColsViewport.scrollTop = 0;
     });
 
+    this.ePinnedColsViewport.addEventListener("wheel", function(event) {
+        var delta = event.deltaY;
+        if (event.deltaMode > 0) {
+            // used by FF, deltaMode==1 signals that the delta is in lines r.t. pixels
+            delta *= 12;
+        }
+        if (delta !== 0) {
+            var newTopPosition = lastTopPosition + delta;
+            if (newTopPosition < 0) {
+                newTopPosition = 0;
+            }
+            var maxOffset = that.ePinnedColsViewport.scrollHeight - that.ePinnedColsViewport.clientHeight;
+            if (newTopPosition > maxOffset) {
+                newTopPosition = maxOffset;
+            }
+            lastTopPosition = newTopPosition;
+            that.scrollPinned(newTopPosition);
+            that.eBodyViewport.scrollTop = newTopPosition;
+            that.rowRenderer.drawVirtualRows();
+        }
+
+        event.preventDefault();
+        return false;
+    });
 };
 
 GridPanel.prototype.scrollHeader = function(bodyLeftPosition) {
