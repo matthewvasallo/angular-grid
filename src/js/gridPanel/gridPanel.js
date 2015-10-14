@@ -263,8 +263,13 @@ GridPanel.prototype.addScrollListener = function() {
     });
 
     this.ePinnedColsViewport.addEventListener("wheel", function(event) {
-        if (event.deltaY !== 0) {
-            var newTopPosition = lastTopPosition + event.deltaY;
+        var delta = event.deltaY;
+        if (event.deltaMode > 0) {
+            // used by FF, deltaMode==1 signals that the delta is in lines r.t. pixels
+            delta *= 12;
+        }
+        if (delta !== 0) {
+            var newTopPosition = lastTopPosition + delta;
             if (newTopPosition < 0) {
                 newTopPosition = 0;
             }
