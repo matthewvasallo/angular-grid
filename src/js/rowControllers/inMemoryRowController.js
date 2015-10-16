@@ -34,6 +34,13 @@ InMemoryRowController.prototype.createModel = function() {
         getVirtualRow: function(index) {
             return that.rowsAfterMap[index];
         },
+        getMappedIndexFromOriginal: function(index) {
+            if (that.originalToMapped) {
+                return that.originalToMapped[index];
+            }
+
+            return -1;
+        },
         getVirtualRowCount: function() {
             if (that.rowsAfterMap) {
                 return that.rowsAfterMap.length;
@@ -463,6 +470,11 @@ InMemoryRowController.prototype.doGroupMapping = function() {
     var rowsAfterMap = [];
     this.addToMap(rowsAfterMap, this.rowsAfterSort);
     this.rowsAfterMap = rowsAfterMap;
+
+    this.originalToMapped = {};
+    for (var i=0; i < this.rowsAfterMap.length; i++) {
+        this.originalToMapped[rowsAfterMap[i].id] = i;
+    }
 };
 
 // private

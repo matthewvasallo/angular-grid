@@ -451,6 +451,9 @@ Grid.prototype.addApi = function() {
         editCellAtRowColumn: function(rowIndex, columnIndex) {
             return that.rowRenderer.editCellAtRowColumn(rowIndex, columnIndex);
         },
+        mapOriginalIndexToVisible: function(index) {
+            return that.rowModel.getMappedIndexFromOriginal(index);
+        },
         refreshByRowColumn: function(rowIndex, columnIndex) {
             that.rowRenderer.refreshByRowColumn(rowIndex, columnIndex);
         },
