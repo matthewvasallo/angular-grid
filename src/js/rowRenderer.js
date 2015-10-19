@@ -357,7 +357,7 @@ RowRenderer.prototype.asyncRender = function() {
         if (!this.rowsChanged) {
             this.rowsChanged = [];
         }
-        this.rowsChanged.push(rowIndex);
+        this.rowsChanged.push(this.renderedRows[rowIndex].node);
     }
 
     if (rowsInserted) {
@@ -372,9 +372,9 @@ RowRenderer.prototype.asyncRender = function() {
         if (domRowsChangedFn && this.rowsChanged && this.rowsChanged.length > 0) {
             // inform the outside world of new rows
             var filteredRows = [];
-            this.rowsChanged.forEach(function(index) {
-                if (index >= that.firstVirtualRenderedRow && index <= that.lastVirtualRenderedRow) {
-                    filteredRows.push(that.renderedRows[index].node.data);
+            this.rowsChanged.forEach(function(row) {
+                if (row.id >= that.firstVirtualRenderedRow && row.id <= that.lastVirtualRenderedRow) {
+                    filteredRows.push(row.data);
                 }
             });
             if (filteredRows.length > 0) {
