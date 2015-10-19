@@ -31,6 +31,8 @@ RowRenderer.prototype.init = function(gridOptions, columnModel, gridOptionsWrapp
 
     this.renderedRowStartEditingListeners = {};
 
+    this.addedRowIDs = {};
+
     this.editingCell = false; //gets set to true when editing a cell
 };
 
@@ -354,10 +356,7 @@ RowRenderer.prototype.asyncRender = function() {
     var domRowsChangedFn = this.gridOptionsWrapper.getDOMRowsChangedHandler();
     // store list of dom rows changed.
     if(rowsInserted && domRowsChangedFn) {
-        if (!this.rowsChanged) {
-            this.rowsChanged = [];
-        }
-        this.rowsChanged.push(this.renderedRows[rowIndex].node);
+        this.addedRowIDs[this.renderedRows[rowIndex].node.id] = true;
     }
 
     if (rowsInserted) {
@@ -369,18 +368,21 @@ RowRenderer.prototype.asyncRender = function() {
     if (!rowsInserted) {
         // didn't find anything to do, so catch up with final processing
         this.inProgress--;
-        if (domRowsChangedFn && this.rowsChanged && this.rowsChanged.length > 0) {
+        if (domRowsChangedFn && this.addedRowIDs && Object.keys(this.addedRowIDs).length > 0) {
             // inform the outside world of new rows
             var filteredRows = [];
-            this.rowsChanged.forEach(function(row) {
-                if (row.id >= that.firstVirtualRenderedRow && row.id <= that.lastVirtualRenderedRow) {
-                    filteredRows.push(row.data);
+            // go through the currently rendered rows again, because it's possible that rows that appeared
+            // briefly during scrolling didn't end up on screen.
+            for (rowIndex = this.firstVirtualRenderedRow; rowIndex <= this.lastVirtualRenderedRow; rowIndex++) {
+                if (this.addedRowIDs[this.renderedRows[rowIndex].node.id]) {
+                    filteredRows.push(this.renderedRows[rowIndex].node.data);
                 }
-            });
+            }
+
             if (filteredRows.length > 0) {
                 domRowsChangedFn(filteredRows);
             }
-            this.rowsChanged = [];
+            this.addedRowIDs = {};
         }
         // if we are doing angular compiling, then do digest the scope here
         if ( this.gridOptionsWrapper.isAngularCompileRows()) {
