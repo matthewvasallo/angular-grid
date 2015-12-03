@@ -495,6 +495,14 @@ module ag.grid {
             this.eventService.dispatchEvent(Events.EVENT_COLUMN_GROUP_OPENED, event);
         }
 
+        public openCloseAllColumnGroups(expanded: boolean): void {
+            var groups = this.columnGroups;
+            for (var i = 0; i < groups.length; i++) {
+                groups[i].expanded = expanded;
+                this.columnGroupOpened(groups[i], true);
+            }
+        }
+
         // called from API
         public hideColumns(colIds: any, hide: any) {
             var updatedCols: Column[] = [];
