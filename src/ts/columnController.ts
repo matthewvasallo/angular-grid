@@ -497,9 +497,19 @@ module ag.grid {
 
         public openCloseAllColumnGroups(expanded: boolean): void {
             var groups = this.columnGroups;
+            var changed = false;
             for (var i = 0; i < groups.length; i++) {
-                groups[i].expanded = expanded;
-                this.columnGroupOpened(groups[i], true);
+                if (groups[i].expanded !== expanded) {
+                    groups[i].expanded = expanded;
+                    changed = true;
+                }
+            }
+            if (changed) {
+                this.updateGroups();
+                this.updateDisplayedColumns();
+                // send event for just the first group; doing all of them is very slow
+                var event = new ColumnChangeEvent(Events.EVENT_COLUMN_GROUP_OPENED).withColumnGroup(groups[0]);
+                this.eventService.dispatchEvent(Events.EVENT_COLUMN_GROUP_OPENED, event);
             }
         }
 
