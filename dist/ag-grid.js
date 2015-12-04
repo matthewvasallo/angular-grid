@@ -1533,6 +1533,13 @@ var ag;
                 var event = new grid.ColumnChangeEvent(grid.Events.EVENT_COLUMN_GROUP_OPENED).withColumnGroup(group);
                 this.eventService.dispatchEvent(grid.Events.EVENT_COLUMN_GROUP_OPENED, event);
             };
+            ColumnController.prototype.openCloseAllColumnGroups = function (expanded) {
+                var groups = this.columnGroups;
+                for (var i = 0; i < groups.length; i++) {
+                    groups[i].expanded = expanded;
+                    this.columnGroupOpened(groups[i], true);
+                }
+            };
             // called from API
             ColumnController.prototype.hideColumns = function (colIds, hide) {
                 var _this = this;
@@ -3574,8 +3581,7 @@ var ag;
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 var ag;
 (function (ag) {

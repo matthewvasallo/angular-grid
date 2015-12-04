@@ -214,7 +214,7 @@ declare module ag.grid {
         getIsScrollLag(): () => boolean;
         getSortingOrder(): string[];
         getSlaveGrids(): GridOptions[];
-        getGroupRowRenderer(): Object | Function;
+        getGroupRowRenderer(): Function | Object;
         getRowHeight(): number;
         getOverlayLoadingTemplate(): string;
         getOverlayNoRowsTemplate(): string;
@@ -403,6 +403,7 @@ declare module ag.grid {
         onColumnsChanged(): void;
         private checkForDeprecatedItems(columnDefs);
         columnGroupOpened(group: ColumnGroup, newValue: boolean): void;
+        openCloseAllColumnGroups(expanded: boolean): void;
         hideColumns(colIds: any, hide: any): void;
         private updateModel();
         private updateDisplayedColumns();
