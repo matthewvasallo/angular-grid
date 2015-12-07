@@ -495,6 +495,7 @@ module ag.grid {
             this.eventService.dispatchEvent(Events.EVENT_COLUMN_GROUP_OPENED, event);
         }
 
+        // Cengage addition
         public openCloseAllColumnGroups(expanded: boolean): void {
             var groups = this.columnGroups;
             var changed = false;

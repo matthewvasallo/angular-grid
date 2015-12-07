@@ -287,6 +287,7 @@ declare module ag.grid {
         static EVENT_ROW_CLICKED: string;
         static EVENT_ROW_DOUBLE_CLICKED: string;
         static EVENT_READY: string;
+        static EVENT_VIRTUAL_ROWS_ADDED: string;
     }
 }
 declare module ag.grid {

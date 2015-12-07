@@ -343,6 +343,7 @@ module ag.grid {
 
             var mainRowWidth = this.columnModel.getBodyContainerWidth();
             var that = this;
+            var rowsAdded : any[] = [];
 
             // at the end, this array will contain the items we need to remove
             var rowsToRemove = Object.keys(this.renderedRows);
@@ -358,6 +359,7 @@ module ag.grid {
                 var node = this.rowModel.getVirtualRow(rowIndex);
                 if (node) {
                     that.insertRow(node, rowIndex, mainRowWidth);
+                    rowsAdded.push(rowIndex);
                 }
             }
 
@@ -370,6 +372,13 @@ module ag.grid {
                 setTimeout(function () {
                     that.$scope.$apply();
                 }, 0);
+            }
+
+            if (rowsAdded.length > 0) {
+                var newRows = rowsAdded.map(function(index) {
+                    return that.renderedRows[index].getRowNode().data;
+                });
+                this.eventService.dispatchEvent(Events.EVENT_VIRTUAL_ROWS_ADDED, newRows);
             }
 
             //var end = new Date().getTime();
