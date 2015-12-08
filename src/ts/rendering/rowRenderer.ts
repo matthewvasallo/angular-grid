@@ -564,6 +564,21 @@ module ag.grid {
             }
         }
 
+        // Cengage addition
+        public editCellAtRowColumn(rowIndex: any, colIndex: any): boolean {
+            var renderedRow: RenderedRow = this.renderedRows[rowIndex];
+            var column : Column = this.columnModel.getDisplayedColumns()[colIndex];
+            if (renderedRow && column) {
+                var renderedCell: RenderedCell = renderedRow.getRenderedCellForColumn(column);
+                if (renderedCell && renderedCell.isCellEditable()) {
+                    renderedCell.startEditing();
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         // called by the cell, when tab is pressed while editing
         public startEditingNextCell(rowIndex: any, column: any, shiftKey: any) {
 

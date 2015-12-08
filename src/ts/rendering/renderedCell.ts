@@ -146,23 +146,58 @@ module ag.grid {
 
         }
 
+        // Cengage addition
+        public useEditCellRenderer(container: any) : void {
+            var colDef : ColDef = this.column.colDef;
+            var rendererParams = {
+                value: this.getValue(),
+                data: this.data,
+                node: this.node,
+                colDef: colDef,
+                column: this.column,
+                $scope: this.scope,
+                rowIndex: this.rowIndex,
+                api: this.gridOptionsWrapper.getApi(),
+                context: this.gridOptionsWrapper.getContext()
+            };
+
+            var editRenderer = colDef.editCellRenderer;
+            var resultFromRenderer = editRenderer(rendererParams);
+
+            //return resultFromRenderer;
+            if (Utils.isNodeOrElement(resultFromRenderer)) {
+                container.appendChild(resultFromRenderer)
+            } else {
+                container.innerHTML = resultFromRenderer;
+            }
+        }
+
         // called by rowRenderer when user navigates via tab key
         public startEditing(key?: number) {
             var that = this;
             this.editingCell = true;
             _.removeAllChildren(this.vGridCell.getElement());
-            var eInput = document.createElement('input');
-            eInput.type = 'text';
-            _.addCssClass(eInput, 'ag-cell-edit-input');
+            var eInput : any, nodeToAppend : any;
 
-            var startWithOldValue = key !== Constants.KEY_BACKSPACE && key !== Constants.KEY_DELETE;
-            var value = this.getValue();
-            if (startWithOldValue && value !== null && value !== undefined) {
-                eInput.value = value;
+            if (this.column.colDef.editCellRenderer) {
+                nodeToAppend = document.createElement('span');
+                this.useEditCellRenderer(nodeToAppend);
+                eInput = nodeToAppend.querySelector('input');
+            } else {
+                eInput = document.createElement('input');
+                eInput.type = 'text';
+                _.addCssClass(eInput, 'ag-cell-edit-input');
+                var startWithOldValue = key !== Constants.KEY_BACKSPACE && key !== Constants.KEY_DELETE;
+                var value = this.getValue();
+                if (startWithOldValue && value !== null && value !== undefined) {
+                    eInput.value = value;
+                }
+
+                eInput.style.width = (this.column.actualWidth - 14) + 'px';
+                nodeToAppend = eInput;
             }
 
-            eInput.style.width = (this.column.actualWidth - 14) + 'px';
-            this.vGridCell.appendChild(eInput);
+            this.vGridCell.appendChild(nodeToAppend);
             eInput.focus();
             eInput.select();
 

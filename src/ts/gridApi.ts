@@ -399,5 +399,9 @@ module ag.grid {
         public setBodyScrollLeft(leftPos: any) {
             this.gridPanel.getBodyViewport().scrollLeft = leftPos;
         }
+
+        public editCellAtRowColumn(rowIndex: any, colIndex: any): boolean {
+            return this.rowRenderer.editCellAtRowColumn(rowIndex, colIndex);
+        }
     }
 }

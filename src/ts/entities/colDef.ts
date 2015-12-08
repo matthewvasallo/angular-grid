@@ -126,5 +126,8 @@ module ag.grid {
         /** Function callback, gets called when a cell is right clicked. */
         onCellContextMenu?: Function;
 
+        // Cengage addition
+        /** Function callback, gets called to render a cell- editor. */
+        editCellRenderer?: Function;
     }
 }
