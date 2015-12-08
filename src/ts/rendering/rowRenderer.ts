@@ -42,6 +42,7 @@ module ag.grid {
         private eFloatingBottomContainer: HTMLElement;
         private eFloatingBottomPinnedContainer: HTMLElement;
         private eParentsOfRows: HTMLElement[];
+        private widthHolderDiv: HTMLElement;
 
         public init(columnModel: any, gridOptionsWrapper: GridOptionsWrapper, gridPanel: GridPanel,
                     angularGrid: Grid, selectionRendererFactory: SelectionRendererFactory, $compile: any, $scope: any,
@@ -117,6 +118,24 @@ module ag.grid {
                 this.eFloatingTopContainer];
             this.eAllPinnedContainers = [this.ePinnedColsContainer, this.eFloatingBottomPinnedContainer,
                 this.eFloatingTopPinnedContainer];
+
+            this.addWidthHolderDiv();
+        }
+
+        // Cengage addition
+        private addWidthHolderDiv(): any {
+            // when all rows are deleted during scrolling, the container was collapsing to 0 width,
+            // and losing the scroll position.
+            // so we add an empty div off screen, with the desired width, and the position is preserved.
+            var div = document.createElement("div");
+            div.innerHTML = "&nbsp;";
+
+            div.style.position = "absolute";
+            div.style.top = "-100px";
+            // width will be set dynamically
+            this.eBodyContainer.appendChild(div);
+
+            this.widthHolderDiv = div;
         }
 
         public refreshAllFloatingRows(): void {
@@ -240,6 +259,9 @@ module ag.grid {
         }
 
         private refreshAllVirtualRows(fromIndex: any) {
+            // make sure the dummy div spans the entire width, so that scroll position is maintained.
+            this.widthHolderDiv.style.width = this.columnModel.getBodyContainerWidth() + "px";
+
             // remove all current virtual rows, as they have old data
             var rowsToRemove = Object.keys(this.renderedRows);
             this.removeVirtualRow(rowsToRemove, fromIndex);
