@@ -132,7 +132,9 @@ module ag.grid {
                 this.addCellNavigationHandler();
             }
 
-            this.vGridCell.addStyles({width: this.column.actualWidth + "px"});
+            var widthPX = this.column.actualWidth + "";
+            widthPX = widthPX.match(/^[\d\.]+$/) ? widthPX + "px" : widthPX;
+            this.vGridCell.addStyles({width:  widthPX});
 
             this.createParentOfValue();
 
