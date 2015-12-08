@@ -514,6 +514,20 @@ module ag.grid {
             }
         }
 
+        // Cengage addition
+        public getOffsetForColumnIndex(colIndex: any): any {
+            var offset = 0;
+            var min = Math.min(colIndex, this.allColumns.length);
+            for (var i = 0; i < min; i++) {
+                var col = this.allColumns[i];
+                if (!col.pinned && this.displayedColumns.indexOf(col) >= 0) {
+                    offset += col.actualWidth;
+                }
+            }
+
+            return offset;
+        }
+
         // called from API
         public hideColumns(colIds: any, hide: any) {
             var updatedCols: Column[] = [];

@@ -390,5 +390,14 @@ module ag.grid {
         public destroy(): void {
             this.grid.destroy();
         }
+
+        // Cengage additions
+        public getBodyScrollLeft(): any {
+            return this.gridPanel.getBodyViewport().scrollLeft;
+        }
+
+        public setBodyScrollLeft(leftPos: any) {
+            this.gridPanel.getBodyViewport().scrollLeft = leftPos;
+        }
     }
 }
