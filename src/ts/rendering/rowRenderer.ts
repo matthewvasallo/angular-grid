@@ -43,6 +43,7 @@ module ag.grid {
         private eFloatingBottomPinnedContainer: HTMLElement;
         private eParentsOfRows: HTMLElement[];
         private widthHolderDiv: HTMLElement;
+        private cellToBeEdited: any;
 
         public init(columnModel: any, gridOptionsWrapper: GridOptionsWrapper, gridPanel: GridPanel,
                     angularGrid: Grid, selectionRendererFactory: SelectionRendererFactory, $compile: any, $scope: any,
@@ -566,69 +567,94 @@ module ag.grid {
 
         // Cengage addition
         public editCellAtRowColumn(rowIndex: any, colIndex: any): boolean {
-            var renderedRow: RenderedRow = this.renderedRows[rowIndex];
-            var column : Column = this.columnModel.getDisplayedColumns()[colIndex];
-            if (renderedRow && column) {
-                var renderedCell: RenderedCell = renderedRow.getRenderedCellForColumn(column);
-                if (renderedCell && renderedCell.isCellEditable()) {
-                    renderedCell.startEditing();
-                    return true;
-                }
+            var renderedCell: RenderedCell = this.getCellAtRowColumn(rowIndex, colIndex);
+            if (renderedCell && renderedCell.isCellEditable()) {
+                renderedCell.startEditing();
+                return true;
             }
 
             return false;
         }
 
-        // called by the cell, when tab is pressed while editing
-        public startEditingNextCell(rowIndex: any, column: any, shiftKey: any) {
+        private getCellAtRowColumn(rowIndex: any, colIndex: any, display: boolean = false) : RenderedCell {
+            var renderedRow: RenderedRow = this.renderedRows[rowIndex];
+            var columns : Column[] = display ? this.columnModel.getDisplayedColumns() : this.columnModel.getAllColumns();
+            var column : Column = columns[colIndex];
+            if (renderedRow && column) {
+                return renderedRow.getRenderedCellForColumn(column);
+            }
 
-            var firstRowToCheck = this.firstVirtualRenderedRow;
-            var lastRowToCheck = this.lastVirtualRenderedRow;
-            var currentRowIndex = rowIndex;
+            return null;
+        }
 
+        public selectNextEditCellByParameters(rowIndex: any, column: any, params: any) {
             var visibleColumns = this.columnModel.getDisplayedColumns();
             var currentCol = column;
+            var currentColIndex = visibleColumns.indexOf(currentCol);
+
+            var dx = params.deltaX;
+            var dy = params.deltaY;
+
+            var position : {[key: string] : any} = {
+                x: {
+                    current: currentColIndex,
+                    min: 0,
+                    max: visibleColumns.length - 1
+                },
+                y: {
+                    current: rowIndex,
+                    min: 0,
+                    max: this.rowModel.getVirtualRowCount() - 1
+                }
+            };
 
             while (true) {
 
-                var indexOfCurrentCol = visibleColumns.indexOf(currentCol);
+                adjustPosition("x", dx);
+                adjustPosition("y", dy);
 
-                // move backward
-                if (shiftKey) {
-                    // move along to the previous cell
-                    currentCol = visibleColumns[indexOfCurrentCol - 1];
-                    // check if end of the row, and if so, go back a row
-                    if (!currentCol) {
-                        currentCol = visibleColumns[visibleColumns.length - 1];
-                        currentRowIndex--;
-                    }
+                currentCol = visibleColumns[position['x'].current];
+                var done = false;
 
-                    // if got to end of rendered rows, then quit looking
-                    if (currentRowIndex < firstRowToCheck) {
+                var renderedCell: RenderedCell = this.getCellAtRowColumn(position['y'].current, position['x'].current, true);
+                if (!params.editable || (renderedCell && renderedCell.isCellEditable())) {
+                    if (renderedCell) {
+                        //this.editCellAtRowColumn(position['y'].current, position['x'].current);
+                        renderedCell.startEditing();
+                        // ensure column visible: here or in startEditing?
                         return;
-                    }
-                    // move forward
-                } else {
-                    // move along to the next cell
-                    currentCol = visibleColumns[indexOfCurrentCol + 1];
-                    // check if end of the row, and if so, go forward a row
-                    if (!currentCol) {
-                        currentCol = visibleColumns[0];
-                        currentRowIndex++;
-                    }
-
-                    // if got to end of rendered rows, then quit looking
-                    if (currentRowIndex > lastRowToCheck) {
-                        return;
+                    } else {
+                        // note position to edit when rendered
+                        this.cellToBeEdited = {
+                            rowIndex: position['y'].current,
+                            columnIndex: position['x'].current
+                        };
+                        this.gridPanel.ensureIndexVisible(position['y'].current);
+                        // also ensure horizontal visible?
                     }
                 }
+            }
 
-                var nextRenderedRow: RenderedRow = this.renderedRows[currentRowIndex];
-                var nextRenderedCell: RenderedCell = nextRenderedRow.getRenderedCellForColumn(currentCol);
-                if (nextRenderedCell.isCellEditable()) {
-                    nextRenderedCell.startEditing();
-                    nextRenderedCell.focusCell(false);
+            function adjustPosition(which: string, delta: any) {
+                if (! delta) {
                     return;
+                }
+
+                var coordinate : any = position[which];
+                var other : string = which === "x" ? "y" : "x";
+                var advanceAtEnd : boolean = params.advanceAtEnd && (<any>position[other].max) > (<any>position[other].min);
+
+                coordinate.current += delta;
+                if (coordinate.current < coordinate.min) {
+                    coordinate.current = coordinate.max;
+                    if (advanceAtEnd) {
+                        adjustPosition(other, -1);
+                    }
+                } else if (coordinate.current > coordinate.max) {
+                    coordinate.current = coordinate.min;
+                    if (advanceAtEnd) {
+                        adjustPosition(other, 1);
+                    }
                 }
             }
         }

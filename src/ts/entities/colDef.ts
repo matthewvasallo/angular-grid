@@ -129,5 +129,6 @@ module ag.grid {
         // Cengage addition
         /** Function callback, gets called to render a cell- editor. */
         editCellRenderer?: Function;
+        newValueValidator?: Function;
     }
 }

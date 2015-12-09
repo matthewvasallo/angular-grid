@@ -99,6 +99,8 @@ module ag.grid {
         public getRowHeight() { return this.rowHeight; }
         public getOverlayLoadingTemplate() { return this.gridOptions.overlayLoadingTemplate; }
         public getOverlayNoRowsTemplate() { return this.gridOptions.overlayNoRowsTemplate; }
+        // Cengage additions
+        public getEditKeyMap() { return this.gridOptions.editKeyMap || {}; }
 
         // properties
         public getHeaderHeight(): number {

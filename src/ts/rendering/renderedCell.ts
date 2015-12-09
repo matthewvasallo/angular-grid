@@ -202,37 +202,29 @@ module ag.grid {
             eInput.select();
 
             var blurListener = function () {
-                that.stopEditing(eInput, blurListener);
+                var params = {
+                    abortIfInvalid: true
+                };
+                that.stopEditing(eInput, blurListener, params);
             };
 
             //stop entering if we loose focus
             eInput.addEventListener("blur", blurListener);
 
-            //stop editing if enter pressed
-            eInput.addEventListener('keypress', (event: any) => {
+            var customKeyMap = this.gridOptionsWrapper.getEditKeyMap();
+            eInput.addEventListener('keydown', function(event: any) {
                 var key = event.which || event.keyCode;
-                if (key === Constants.KEY_ENTER) {
-                    this.stopEditing(eInput, blurListener);
-                    this.focusCell(true);
-                }
-            });
+                var keyDefinition = customKeyMap[key] || Constants.DEFAULT_KEY_MAP[key];
+                if (keyDefinition) {
+                    var params = keyDefinition[event.shiftKey ? "shift" : "noShift"];
+                    if (params) {
+                        var stopped = that.stopEditing(eInput, blurListener, params);
+                        if (stopped && ! (params.abortEdit || params.endEdit)) {
+                            that.rowRenderer.selectNextEditCellByParameters(that.rowIndex, that.column, params);
+                        }
+                    }
 
-            //stop editing if enter pressed
-            eInput.addEventListener('keydown', (event: any) => {
-                var key = event.which || event.keyCode;
-                if (key === Constants.KEY_ESCAPE) {
-                    this.stopEditing(eInput, blurListener, true);
-                    this.focusCell(true);
-                }
-            });
-
-            // tab key doesn't generate keypress, so need keydown to listen for that
-            eInput.addEventListener('keydown', function (event:any) {
-                var key = event.which || event.keyCode;
-                if (key == Constants.KEY_TAB) {
-                    that.stopEditing(eInput, blurListener);
-                    that.rowRenderer.startEditingNextCell(that.rowIndex, that.column, event.shiftKey);
-                    // we don't want the default tab action, so return false, this stops the event from bubbling
+                    // we don't want the default action, so return false, this stops the event from bubbling
                     event.preventDefault();
                     return false;
                 }
@@ -243,26 +235,35 @@ module ag.grid {
             this.rowRenderer.focusCell(this.vGridCell.getElement(), this.rowIndex, this.column.index, this.column.colDef, forceBrowserFocus);
         }
 
-        private stopEditing(eInput: any, blurListener: any, reset: boolean = false) {
+        private stopEditing(eInput: any, blurListener: any, params: any): boolean {
             this.editingCell = false;
             var newValue = eInput.value;
             var colDef = this.column.colDef;
+            var paramsForCallbacks = {
+                node: this.node,
+                data: this.node.data,
+                oldValue: this.node.data[colDef.field],
+                newValue: newValue,
+                rowIndex: this.rowIndex,
+                colDef: colDef,
+                api: this.gridOptionsWrapper.getApi(),
+                context: this.gridOptionsWrapper.getContext()
+            };
+
+            if (!params.abortEdit && colDef.newValueValidator) {
+                if (!colDef.newValueValidator(paramsForCallbacks)) {
+                    if (!params.abortIfInvalid) {
+                        return false;
+                    }
+                    params.abortEdit = true;
+                }
+            }
 
             //If we don't remove the blur listener first, we get:
             //Uncaught NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is no longer a child of this node. Perhaps it was moved in a 'blur' event handler?
             eInput.removeEventListener('blur', blurListener);
 
-            if (!reset) {
-                var paramsForCallbacks = {
-                    node: this.node,
-                    data: this.node.data,
-                    oldValue: this.node.data[colDef.field],
-                    newValue: newValue,
-                    rowIndex: this.rowIndex,
-                    colDef: colDef,
-                    api: this.gridOptionsWrapper.getApi(),
-                    context: this.gridOptionsWrapper.getContext()
-                };
+            if (!params.abortEdit) {
 
                 if (colDef.newValueHandler) {
                     colDef.newValueHandler(paramsForCallbacks);
@@ -285,6 +286,8 @@ module ag.grid {
                 this.vGridCell.appendChild(this.vCellWrapper.getElement());
             }
             this.refreshCell();
+
+            return true;
         }
 
         private createParams(): any {
