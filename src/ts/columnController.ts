@@ -286,6 +286,10 @@ module ag.grid {
             this.eventService.dispatchEvent(Events.EVENT_COLUMN_VISIBLE, event);
         }
 
+        public  getDisplayedColIndex(col: any) : number {
+            return this.displayedColumns.indexOf(col);
+        }
+
         public getVisibleColBefore(col: any): Column {
             var oldIndex = this.visibleColumns.indexOf(col);
             if (oldIndex > 0) {

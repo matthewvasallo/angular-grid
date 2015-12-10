@@ -229,6 +229,11 @@ module ag.grid {
                     return false;
                 }
             });
+
+            var colIndex = this.columnController.getDisplayedColIndex(this.column);
+            if (colIndex >= 0) {
+                this.rowRenderer.getGridPanel().ensureColIndexVisible(colIndex, this.column.colDef.editWidth);
+            }
         }
 
         public focusCell(forceBrowserFocus: boolean): void {

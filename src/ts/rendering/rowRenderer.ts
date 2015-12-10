@@ -595,6 +595,10 @@ module ag.grid {
             return null;
         }
 
+        public getGridPanel() : GridPanel {
+            return this.gridPanel;
+        }
+
         public selectNextEditCellByParameters(rowIndex: any, column: any, params: any) {
             var visibleColumns = this.columnModel.getDisplayedColumns();
             var currentCol = column;

@@ -228,7 +228,7 @@ module ag.grid {
             // otherwise, row is already in view, so do nothing
         }
 
-        public ensureColIndexVisible(index: any) {
+        public ensureColIndexVisible(index: any, widthToUse = 0) {
             if (typeof index !== 'number') {
                 console.warn('col index must be a number: ' + index);
                 return;
@@ -255,7 +255,7 @@ module ag.grid {
                 colLeftPixel += columns[i].actualWidth;
             }
 
-            var colRightPixel = colLeftPixel + column.actualWidth;
+            var colRightPixel = colLeftPixel + (widthToUse || column.actualWidth);
 
             var viewportLeftPixel = this.eBodyViewport.scrollLeft;
             var viewportWidth = this.eBodyViewport.offsetWidth;
