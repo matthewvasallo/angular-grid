@@ -422,6 +422,14 @@ module ag.grid {
             renderedRow.setMainRowWidth(mainRowWidth);
 
             this.renderedRows[rowIndex] = renderedRow;
+
+            if (this.cellToBeEdited && this.cellToBeEdited.rowIndex === rowIndex) {
+                var renderedCell : RenderedCell = renderedRow.getRenderedCellForColumn(this.cellToBeEdited.column);
+                if (renderedCell.isCellEditable()) {
+                    renderedCell.startEditing();
+                    this.cellToBeEdited = null;
+                }
+            }
         }
 
         public getRenderedNodes() {
@@ -608,52 +616,55 @@ module ag.grid {
                 }
             };
 
-            while (true) {
+            var done = false;
+            while (!done) {
 
                 adjustPosition("x", dx);
                 adjustPosition("y", dy);
 
                 currentCol = visibleColumns[position['x'].current];
-                var done = false;
+
+                if (params.skipPinned && currentCol.pinned) {
+                    continue;
+                }
 
                 var renderedCell: RenderedCell = this.getCellAtRowColumn(position['y'].current, position['x'].current, true);
-                if (!params.editable || (renderedCell && renderedCell.isCellEditable())) {
-                    if (renderedCell) {
-                        //this.editCellAtRowColumn(position['y'].current, position['x'].current);
-                        renderedCell.startEditing();
-                        // ensure column visible: here or in startEditing?
-                        return;
-                    } else {
-                        // note position to edit when rendered
-                        this.cellToBeEdited = {
-                            rowIndex: position['y'].current,
-                            columnIndex: position['x'].current
-                        };
-                        this.gridPanel.ensureIndexVisible(position['y'].current);
-                        // also ensure horizontal visible?
-                    }
+                if (renderedCell) {
+                    //this.editCellAtRowColumn(position['y'].current, position['x'].current);
+                    renderedCell.startEditing();
+                    // ensure column visible: here or in startEditing?
+                    done = true;
+                } else {
+                    // note position to edit when rendered
+                    this.cellToBeEdited = {
+                        rowIndex: position['y'].current,
+                        column: currentCol
+                    };
+                    this.gridPanel.ensureIndexVisible(position['y'].current);
+                    // also ensure horizontal visible?
+                    done = true;
                 }
             }
 
-            function adjustPosition(which: string, delta: any) {
+            function adjustPosition(which: string, delta: any, advanceOK = true) {
                 if (! delta) {
                     return;
                 }
 
                 var coordinate : any = position[which];
                 var other : string = which === "x" ? "y" : "x";
-                var advanceAtEnd : boolean = params.advanceAtEnd && (<any>position[other].max) > (<any>position[other].min);
+                var advanceAtEnd : boolean = advanceOK && params.advanceAtEnd && (<any>position[other].max) > (<any>position[other].min);
 
                 coordinate.current += delta;
                 if (coordinate.current < coordinate.min) {
                     coordinate.current = coordinate.max;
                     if (advanceAtEnd) {
-                        adjustPosition(other, -1);
+                        adjustPosition(other, -1, false);
                     }
                 } else if (coordinate.current > coordinate.max) {
                     coordinate.current = coordinate.min;
                     if (advanceAtEnd) {
-                        adjustPosition(other, 1);
+                        adjustPosition(other, 1, false);
                     }
                 }
             }

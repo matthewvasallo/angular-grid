@@ -34,13 +34,11 @@ module ag.grid {
     defaultMap[Constants.KEY_TAB] = {
         noShift: {
             deltaX: 1,
-            advanceAtEnd: true,
-            editable: true
+            advanceAtEnd: true
         },
         shift: {
             deltaX: -1,
-            advanceAtEnd: true,
-            editable: true
+            advanceAtEnd: true
         }
     };
     defaultMap[Constants.KEY_ENTER] = {

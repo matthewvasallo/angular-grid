@@ -612,6 +612,11 @@ module ag.grid {
         }
 
         public refreshCell() {
+            if (this.editingCell) {
+                // in our environment, a SSE might trigger a refresh while the user is editting the cell;
+                // we don't want them to get booted out of edit mode.
+                return;
+            }
 
             _.removeAllChildren(this.vParentOfValue.getElement());
             this.value = this.getValue();
