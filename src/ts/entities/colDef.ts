@@ -130,6 +130,8 @@ module ag.grid {
         /** Function callback, gets called to render a cell- editor. */
         editCellRenderer?: Function;
         newValueValidator?: Function;
+        cellHoverHandler?: Function;
+        headerHoverHandler?: Function;
         editWidth?: number;
     }
 }

@@ -127,6 +127,7 @@ module ag.grid {
             this.addCellClickedHandler();
             this.addCellDoubleClickedHandler();
             this.addCellContextMenuHandler();
+            this.addCellHoverHandler();
 
             if (!this.node.floating) { // not allowing navigation on the floating until i have time to figure it out
                 this.addCellNavigationHandler();
@@ -176,6 +177,8 @@ module ag.grid {
         public startEditing(key?: number) {
             var that = this;
             this.editingCell = true;
+            this.rowRenderer.setEditInProgress(true);
+            this.cellEnterExitHandler(true);
             _.removeAllChildren(this.vGridCell.getElement());
             var eInput : any, nodeToAppend : any;
 
@@ -241,7 +244,6 @@ module ag.grid {
         }
 
         private stopEditing(eInput: any, blurListener: any, params: any): boolean {
-            this.editingCell = false;
             var newValue = eInput.value;
             var colDef = this.column.colDef;
             var paramsForCallbacks = {
@@ -263,6 +265,10 @@ module ag.grid {
                     params.abortEdit = true;
                 }
             }
+
+            this.editingCell = false;
+            this.rowRenderer.setEditInProgress(false);
+            this.cellEnterExitHandler(false);
 
             //If we don't remove the blur listener first, we get:
             //Uncaught NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is no longer a child of this node. Perhaps it was moved in a 'blur' event handler?
@@ -397,6 +403,46 @@ module ag.grid {
                     that.startEditing();
                 }
             });
+        }
+
+        private cellEnterExitHandler(entering: boolean, event = {}) {
+            var colDef = this.column.colDef;
+            var hoverHandler = colDef.cellHoverHandler;
+
+            if (hoverHandler) {
+                var hoverParams = {
+                    colDef: colDef,
+                    event: event,
+                    entering: entering,
+                    leaving: !entering,
+                    rowIndex: this.rowIndex,
+                    value: this.getValue(),
+                    context: this.gridOptionsWrapper.getContext(),
+                    api: this.gridOptionsWrapper.getApi()
+                };
+                hoverHandler(hoverParams);
+            }
+        }
+
+        private addCellHoverHandler() {
+            var that = this;
+            var colDef = this.column.colDef;
+            var hoverHandler = colDef.cellHoverHandler;
+
+            if (hoverHandler) {
+                var callHandler = function(entering: boolean, event: any) {
+                    if (that.rowRenderer.isEditInProgress()) {
+                        return;
+                    }
+                    that.cellEnterExitHandler(entering, event);
+                };
+                this.vGridCell.addEventListener("mouseenter", function(e: any) {
+                    callHandler(true, e);
+                });
+                this.vGridCell.addEventListener("mouseleave", function(e: any) {
+                    callHandler(false, e);
+                });
+            }
         }
 
         private populateCell() {

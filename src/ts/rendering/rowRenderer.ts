@@ -44,6 +44,7 @@ module ag.grid {
         private eParentsOfRows: HTMLElement[];
         private widthHolderDiv: HTMLElement;
         private cellToBeEdited: any;
+        private editInProgress: boolean;
 
         public init(columnModel: any, gridOptionsWrapper: GridOptionsWrapper, gridPanel: GridPanel,
                     angularGrid: Grid, selectionRendererFactory: SelectionRendererFactory, $compile: any, $scope: any,
@@ -672,6 +673,14 @@ module ag.grid {
                     }
                 }
             }
+        }
+
+        public isEditInProgress() : boolean {
+            return this.editInProgress;
+        }
+
+        public setEditInProgress(newValue: boolean) {
+            this.editInProgress = newValue;
         }
     }
 }

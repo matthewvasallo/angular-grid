@@ -136,6 +136,33 @@ module ag.grid {
             this.addSortHandling(headerCellLabel);
         }
 
+        private addHoverListener(labelCell: any) {
+            var colDef = this.column.colDef;
+            var handler = colDef.headerHoverHandler;
+            if (handler) {
+                var that = this;
+                var hoverParams = {
+                    colDef: colDef,
+                    entering: false,
+                    event: {},
+                    context: that.gridOptionsWrapper.getContext(),
+                    api: that.gridOptionsWrapper.getApi()
+                };
+
+                labelCell.addEventListener("mouseenter", function (e: any) {
+                    hoverParams.entering = true;
+                    hoverParams.event = e;
+                    handler(hoverParams);
+                });
+
+                labelCell.addEventListener("mouseleave", function (e: any) {
+                    hoverParams.entering = false;
+                    hoverParams.event = e;
+                    handler(hoverParams);
+                });
+            }
+        }
+
         private setupComponents(): void {
             this.eHeaderCell = document.createElement("div");
 
@@ -161,6 +188,8 @@ module ag.grid {
             // label div
             var headerCellLabel = document.createElement("div");
             headerCellLabel.className = "ag-header-cell-label";
+
+            this.addHoverListener(headerCellLabel);
 
             // add in sort icons
             this.addSortIcons(headerCellLabel);
