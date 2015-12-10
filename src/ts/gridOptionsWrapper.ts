@@ -101,6 +101,8 @@ module ag.grid {
         public getOverlayNoRowsTemplate() { return this.gridOptions.overlayNoRowsTemplate; }
         // Cengage additions
         public getEditKeyMap() { return this.gridOptions.editKeyMap || {}; }
+        public getGroupIndentPerLevel() { return this.gridOptions.groupIndentPerLevel; }
+        public getLeafNodeIndent() { return this.gridOptions.leafNodeIndent; }
 
         // properties
         public getHeaderHeight(): number {

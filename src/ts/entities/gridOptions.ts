@@ -111,7 +111,9 @@ module ag.grid {
         columnApi?: ColumnApi; // change to typed
 
         // Cengage additions
-        editKeyMap: any;
+        editKeyMap?: any;
+        groupIndentPerLevel?: number;
+        leafNodeIndent?: number;
     }
 
 }
