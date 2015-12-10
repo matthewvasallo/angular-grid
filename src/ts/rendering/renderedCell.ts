@@ -201,8 +201,6 @@ module ag.grid {
             }
 
             this.vGridCell.appendChild(nodeToAppend);
-            eInput.focus();
-            eInput.select();
 
             var blurListener = function () {
                 var params = {
@@ -237,6 +235,9 @@ module ag.grid {
             if (colIndex >= 0) {
                 this.rowRenderer.getGridPanel().ensureColIndexVisible(colIndex, this.column.colDef.editWidth);
             }
+
+            eInput.focus();
+            eInput.select();
         }
 
         public focusCell(forceBrowserFocus: boolean): void {
