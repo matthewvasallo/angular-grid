@@ -110,6 +110,7 @@ declare module ag.grid {
         static KEY_UP: number;
         static KEY_LEFT: number;
         static KEY_RIGHT: number;
+        static DEFAULT_KEY_MAP: any;
     }
 }
 declare module ag.grid {
@@ -218,6 +219,9 @@ declare module ag.grid {
         getRowHeight(): number;
         getOverlayLoadingTemplate(): string;
         getOverlayNoRowsTemplate(): string;
+        getEditKeyMap(): any;
+        getGroupIndentPerLevel(): number;
+        getLeafNodeIndent(): number;
         getHeaderHeight(): number;
         setHeaderHeight(headerHeight: number): void;
         isGroupHeaders(): boolean;
@@ -392,6 +396,7 @@ declare module ag.grid {
         getDisplayedColumns(): Column[];
         getAllColumns(): Column[];
         setColumnVisible(column: Column, visible: boolean): void;
+        getDisplayedColIndex(col: any): number;
         getVisibleColBefore(col: any): Column;
         getVisibleColAfter(col: Column): Column;
         isPinning(): boolean;
@@ -405,6 +410,7 @@ declare module ag.grid {
         private checkForDeprecatedItems(columnDefs);
         columnGroupOpened(group: ColumnGroup, newValue: boolean): void;
         openCloseAllColumnGroups(expanded: boolean): void;
+        getOffsetForColumnIndex(colIndex: any): any;
         hideColumns(colIds: any, hide: any): void;
         private updateModel();
         private updateDisplayedColumns();
@@ -608,6 +614,12 @@ declare module ag.grid {
         onCellDoubleClicked?: Function;
         /** Function callback, gets called when a cell is right clicked. */
         onCellContextMenu?: Function;
+        /** Function callback, gets called to render a cell- editor. */
+        editCellRenderer?: Function;
+        newValueValidator?: Function;
+        cellHoverHandler?: Function;
+        headerHoverHandler?: Function;
+        editWidth?: number;
     }
 }
 declare module ag.grid {
@@ -917,15 +929,18 @@ declare module ag.grid {
         getVGridCell(): ag.vdom.VHtmlElement;
         private getDataForRow();
         private setupComponents();
+        useEditCellRenderer(container: any): void;
         startEditing(key?: number): void;
         focusCell(forceBrowserFocus: boolean): void;
-        private stopEditing(eInput, blurListener, reset?);
+        private stopEditing(eInput, blurListener, params);
         private createParams();
         private createEvent(event, eventSource);
         private addCellDoubleClickedHandler();
         private addCellContextMenuHandler();
         isCellEditable(): any;
         private addCellClickedHandler();
+        private cellEnterExitHandler(entering, event?);
+        private addCellHoverHandler();
         private populateCell();
         private addStylesFromCollDef();
         private addClassesFromCollDef();
@@ -1045,11 +1060,15 @@ declare module ag.grid {
         private eFloatingBottomContainer;
         private eFloatingBottomPinnedContainer;
         private eParentsOfRows;
+        private widthHolderDiv;
+        private cellToBeEdited;
+        private editInProgress;
         init(columnModel: any, gridOptionsWrapper: GridOptionsWrapper, gridPanel: GridPanel, angularGrid: Grid, selectionRendererFactory: SelectionRendererFactory, $compile: any, $scope: any, selectionController: SelectionController, expressionService: ExpressionService, templateService: TemplateService, valueService: ValueService, eventService: EventService): void;
         setRowModel(rowModel: any): void;
         onIndividualColumnResized(column: Column): void;
         setMainRowWidths(): void;
         private findAllElements(gridPanel);
+        private addWidthHolderDiv();
         refreshAllFloatingRows(): void;
         private refreshFloatingRows(renderedRows, rowData, pinnedContainer, bodyContainer, isTop);
         refreshView(refreshFromIndex?: any): void;
@@ -1074,7 +1093,12 @@ declare module ag.grid {
         focusCell(eCell: any, rowIndex: number, colIndex: number, colDef: ColDef, forceBrowserFocus: any): void;
         getFocusedCell(): any;
         setFocusedCell(rowIndex: any, colIndex: any): void;
-        startEditingNextCell(rowIndex: any, column: any, shiftKey: any): void;
+        editCellAtRowColumn(rowIndex: any, colIndex: any): boolean;
+        private getCellAtRowColumn(rowIndex, colIndex, display?);
+        getGridPanel(): GridPanel;
+        selectNextEditCellByParameters(rowIndex: any, column: any, params: any): void;
+        isEditInProgress(): boolean;
+        setEditInProgress(newValue: boolean): void;
     }
 }
 declare module ag.grid {
@@ -1156,6 +1180,7 @@ declare module ag.grid {
         private addClasses();
         private addMenu();
         private addSortIcons(headerCellLabel);
+        private addHoverListener(labelCell);
         private setupComponents();
         private useRenderer(headerNameValue, headerCellRenderer, headerCellLabel);
         refreshFilterIcon(): void;
@@ -1244,6 +1269,7 @@ declare module ag.grid {
         private groupCreator;
         private valueService;
         private eventService;
+        private originalToMapped;
         constructor();
         init(gridOptionsWrapper: GridOptionsWrapper, columnController: ColumnController, angularGrid: any, filterManager: FilterManager, $scope: any, groupCreator: GroupCreator, valueService: ValueService, eventService: EventService): void;
         private createModel();
@@ -1448,7 +1474,7 @@ declare module ag.grid {
         private createLoadingOverlayTemplate();
         private createNoRowsOverlayTemplate();
         ensureIndexVisible(index: any): void;
-        ensureColIndexVisible(index: any): void;
+        ensureColIndexVisible(index: any, widthToUse?: number): void;
         showLoadingOverlay(): void;
         showNoRowsOverlay(): void;
         hideOverlay(): void;
@@ -1729,6 +1755,9 @@ declare module ag.grid {
         onRowDoubleClicked?(params: any): void;
         api?: GridApi;
         columnApi?: ColumnApi;
+        editKeyMap?: any;
+        groupIndentPerLevel?: number;
+        leafNodeIndent?: number;
     }
 }
 declare module ag.grid {
@@ -1831,6 +1860,12 @@ declare module ag.grid {
         dispatchEvent(eventType: string, event?: any): void;
         refreshPivot(): void;
         destroy(): void;
+        getBodyScrollLeft(): any;
+        setBodyScrollLeft(leftPos: any): void;
+        editCellAtRowColumn(rowIndex: any, colIndex: any): boolean;
+        private getMappedRow(rowIndex);
+        refreshRowByIndex(rowIndex: any): void;
+        refreshCellByIndexAndId(rowIndex: any, colId: any): void;
     }
 }
 declare module ag.grid {
