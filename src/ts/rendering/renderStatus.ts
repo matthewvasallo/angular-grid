@@ -23,6 +23,7 @@ module ag.grid {
         private levelCount : number;
 
         private areaToRender : {top: number; left: number; bottom: number; right: number} = null;
+        private columnOffsets : number[];
 
         private gridOptionsWrapper: GridOptionsWrapper;
         private gridPanel: GridPanel;
@@ -58,6 +59,10 @@ module ag.grid {
                 this.computeAreaToRender();
             }
             return this.areaToRender;
+        }
+
+        public getColumnOffsets() {
+            return this.columnOffsets;
         }
 
         public isLevelLessThanMax() : boolean {
@@ -111,6 +116,7 @@ module ag.grid {
             var pinnedColCount = this.gridOptionsWrapper.getPinnedColCount();
             var viewportLeftPixel = this.eBodyViewport.scrollLeft;
             var viewportRightPixel = viewportLeftPixel + this.eBodyViewport.offsetWidth;
+            var columnOffsets : number[] = [];
 
             var hBuffer = this.levels[this.currentLevel].h;
             if (hBuffer < 0) {
@@ -122,6 +128,7 @@ module ag.grid {
                 var hPos = 0;
 
                 for (var i = pinnedColCount; i < columns.length; i++) {
+                    columnOffsets[i] = hPos;
                     hPos += columns[i].actualWidth;
                     if (hPos >= viewportLeftPixel) {
                         firstColumnOnScreen = i;
@@ -130,6 +137,7 @@ module ag.grid {
                 }
 
                 for (i++ ; i < columns.length; i++) {
+                    columnOffsets[i] = hPos;
                     hPos += columns[i].actualWidth;
                     if (hPos >= viewportRightPixel) {
                         lastColumnOnScreen = i;
@@ -144,12 +152,13 @@ module ag.grid {
             if (first < 0) {
                 first = 0;
             }
-            if (last >= columns.length) {
-                last = columns.length - 1;
+            if (last > columns.length) {
+                last = columns.length;
             }
 
             this.areaToRender.left = first;
             this.areaToRender.right = last;
+            this.columnOffsets = columnOffsets;
         }
     }
 }

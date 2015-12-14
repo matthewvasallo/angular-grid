@@ -235,16 +235,16 @@ module ag.grid {
             }
         }
 
-        public drawPinnedAndColumnRange(left: number, right: number, maxToRender: number) : number {
+        public drawPinnedAndColumnRange(left: number, right: number, maxToRender: number, columnOffsets: number[]) : number {
             var renderedCount = this.drawCellRange(0, this.gridOptionsWrapper.getPinnedColCount(), maxToRender);
             if (renderedCount < maxToRender) {
-                renderedCount += this.drawCellRange(left, right, maxToRender - renderedCount);
+                renderedCount += this.drawCellRange(left, right, maxToRender - renderedCount, columnOffsets);
             }
 
             return renderedCount;
         }
 
-        private drawCellRange(left: number, right: number, maxToRender: number) : number {
+        private drawCellRange(left: number, right: number, maxToRender: number, columnOffsets?: number[]) : number {
             var columns = this.columnController.getDisplayedColumns();
             var renderedCount = 0;
             var offset = -1;
@@ -254,7 +254,6 @@ module ag.grid {
 
                 if (column && !this.renderedCells[column.index]) {
                     var firstCol = i === 0;
-
 
                     var renderedCell = new RenderedCell(firstCol, column,
                         this.$compile, this.rowRenderer, this.gridOptionsWrapper, this.expressionService,
@@ -267,10 +266,13 @@ module ag.grid {
                     if (column.pinned) {
                         this.vPinnedRow.appendChild(vGridCell);
                     } else {
-                        this.vBodyRow.appendChild(vGridCell);
-                        if (offset < 0) {
-                            offset = this.columnController.getOffsetForColumnIndex()
+                        if (columnOffsets) {
+                            vGridCell.addStyles({
+                                position: "absolute",
+                                left: columnOffsets[i] + "px"
+                            });
                         }
+                        this.vBodyRow.appendChild(vGridCell);
                     }
 
                     this.renderedCells[column.index] = renderedCell;

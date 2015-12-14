@@ -69,6 +69,7 @@ module ag.grid {
         private checkRowRange(maxToRender: number) : number {
             var areaToRender = this.renderStatus.getAreaToRender();
             var cellsRendered = 0;
+            var columnOffsets = this.renderStatus.getColumnOffsets();
 
             for (var rowIndex = areaToRender.top; maxToRender > 0 && rowIndex <= areaToRender.bottom; rowIndex++) {
                 var addedHere : number;
@@ -77,7 +78,7 @@ module ag.grid {
                     thisRow = this.rowRenderer.addRow(rowIndex);
                     this.addedRowIndexes.push(rowIndex);
                 }
-                addedHere = thisRow.drawPinnedAndColumnRange(areaToRender.left, areaToRender.right, maxToRender);
+                addedHere = thisRow.drawPinnedAndColumnRange(areaToRender.left, areaToRender.right, maxToRender, columnOffsets);
                 cellsRendered += addedHere;
                 maxToRender -= addedHere;
             }
