@@ -12,9 +12,9 @@ module ag.grid {
     }, {
         h: 5,
         v: 5
-    }, {
-        h: -1,
-        v: 0
+    //}, {
+    //    h: -1,
+    //    v: 0
     }];
 
     export class RenderStatus {

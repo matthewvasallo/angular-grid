@@ -87,9 +87,9 @@ module ag.grid {
             this.node = node;
             this.scope = this.createChildScopeOrNull(node.data);
 
-            if (!rowIsHeaderThatSpans) {
-                this.drawNormalRow();
-            }
+            //if (!rowIsHeaderThatSpans) {
+            //    this.drawNormalRow();
+            //}
 
             this.addDynamicStyles();
             this.addDynamicClasses();
@@ -235,10 +235,59 @@ module ag.grid {
             }
         }
 
+        public drawPinnedAndColumnRange(left: number, right: number, maxToRender: number) : number {
+            var renderedCount = this.drawCellRange(0, this.gridOptionsWrapper.getPinnedColCount(), maxToRender);
+            if (renderedCount < maxToRender) {
+                renderedCount += this.drawCellRange(left, right, maxToRender - renderedCount);
+            }
+
+            return renderedCount;
+        }
+
+        private drawCellRange(left: number, right: number, maxToRender: number) : number {
+            var columns = this.columnController.getDisplayedColumns();
+            var renderedCount = 0;
+            var offset = -1;
+
+            for (var i = left; i < right; i++) {
+                var column = columns[i];
+
+                if (column && !this.renderedCells[column.index]) {
+                    var firstCol = i === 0;
+
+
+                    var renderedCell = new RenderedCell(firstCol, column,
+                        this.$compile, this.rowRenderer, this.gridOptionsWrapper, this.expressionService,
+                        this.selectionRendererFactory, this.selectionController, this.templateService,
+                        this.cellRendererMap, this.node, this.rowIndex, this.scope, this.columnController,
+                        this.valueService, this.eventService);
+
+                    var vGridCell = renderedCell.getVGridCell();
+
+                    if (column.pinned) {
+                        this.vPinnedRow.appendChild(vGridCell);
+                    } else {
+                        this.vBodyRow.appendChild(vGridCell);
+                        if (offset < 0) {
+                            offset = this.columnController.getOffsetForColumnIndex()
+                        }
+                    }
+
+                    this.renderedCells[column.index] = renderedCell;
+                    if (++renderedCount > maxToRender) {
+                        break;
+                    }
+                }
+            }
+
+            return renderedCount;
+        }
+
         private bindVirtualElement(vElement: ag.vdom.VHtmlElement): void {
-            var html = vElement.toHtmlString();
-            var element: Element = <Element> _.loadTemplate(html);
-            vElement.elementAttached(element);
+            //var html = vElement.toHtmlString();
+            //var element: Element = <Element> _.loadTemplate(html);
+            //vElement.elementAttached(element);
+            vElement.bind();
         }
 
         private createGroupRow() {

@@ -38,11 +38,16 @@ module ag.grid {
         private asyncRender() {
             var that = this;
             var renderedSomething = false;
+            var maxToRender = this.gridOptionsWrapper.getCellsToRenderPerPass();
 
             while (this.renderStatus.isLevelLessThanMax()) {
-                if (this.checkRowRange()) {
+                var cellsRendered = this.checkRowRange(maxToRender);
+                if (cellsRendered > 0) {
                     renderedSomething = true;
-                    break;
+                    maxToRender -= cellsRendered;
+                    if (maxToRender <= 0) {
+                        break;
+                    }
                 }
 
                 this.renderStatus.nextLevel();
@@ -61,24 +66,23 @@ module ag.grid {
             }
         }
 
-        private checkRowRange() : boolean {
+        private checkRowRange(maxToRender: number) : number {
             var areaToRender = this.renderStatus.getAreaToRender();
-            var renderedSomething = false;
+            var cellsRendered = 0;
 
-            for (var rowIndex = areaToRender.top; rowIndex <= areaToRender.bottom; rowIndex++) {
-                if (this.renderedRows[rowIndex]) {
-                    // later will check for horizontal range
-                    continue;
+            for (var rowIndex = areaToRender.top; maxToRender > 0 && rowIndex <= areaToRender.bottom; rowIndex++) {
+                var addedHere : number;
+                var thisRow = this.renderedRows[rowIndex];
+                if (!thisRow) {
+                    thisRow = this.rowRenderer.addRow(rowIndex);
+                    this.addedRowIndexes.push(rowIndex);
                 }
-
-                var addedRow = this.rowRenderer.addRow(rowIndex);
-                // reset renderstatus.level when a row has been added?
-                renderedSomething = true;
-                this.addedRowIndexes.push(rowIndex);
-                break;
+                addedHere = thisRow.drawPinnedAndColumnRange(areaToRender.left, areaToRender.right, maxToRender);
+                cellsRendered += addedHere;
+                maxToRender -= addedHere;
             }
 
-            return renderedSomething;
+            return cellsRendered;
         }
 
         private dispatchRowsAdded() {
