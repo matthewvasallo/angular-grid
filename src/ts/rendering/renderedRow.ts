@@ -165,6 +165,11 @@ module ag.grid {
             });
         }
 
+        // Cengage addition
+        public getData() : any {
+            return this.node.data;
+        }
+
         public getRenderedCellForColumn(column: Column): RenderedCell {
             return this.renderedCells[column.index];
         }

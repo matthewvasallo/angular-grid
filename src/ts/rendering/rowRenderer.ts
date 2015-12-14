@@ -1,6 +1,8 @@
 /// <reference path="../utils.ts" />
 /// <reference path="../constants.ts" />
 /// <reference path="renderedRow.ts" />
+/// <reference path="renderStatus.ts" />
+/// <reference path="asyncRenderer.ts" />
 /// <reference path="../cellRenderers/groupCellRendererFactory.ts" />
 
 module ag.grid {
@@ -30,6 +32,9 @@ module ag.grid {
         private renderedRows: {[key: string]: RenderedRow};
         private renderedTopFloatingRows: RenderedRow[] = [];
         private renderedBottomFloatingRows: RenderedRow[] = [];
+
+        private renderStatus: RenderStatus;
+        private asyncRenderer: AsyncRenderer;
 
         private eAllBodyContainers: HTMLElement[];
         private eAllPinnedContainers: HTMLElement[];
@@ -74,10 +79,15 @@ module ag.grid {
             // map of row ids to row objects. keeps track of which elements
             // are rendered for which rows in the dom.
             this.renderedRows = {};
+
+            // Cengage addition
+            this.renderStatus = new RenderStatus(gridOptionsWrapper, gridPanel, this, columnModel, this.eBodyViewport);
+            this.asyncRenderer = new AsyncRenderer(gridOptionsWrapper, this, this.renderStatus, eventService);
         }
 
         public setRowModel(rowModel: any) {
             this.rowModel = rowModel;
+            this.renderStatus.setRowModel(rowModel);
         }
 
         public onIndividualColumnResized(column: Column) {
@@ -367,7 +377,7 @@ module ag.grid {
 
             var mainRowWidth = this.columnModel.getBodyContainerWidth();
             var that = this;
-            var rowsAdded : any[] = [];
+            var rowsNeeded = false;
 
             // at the end, this array will contain the items we need to remove
             var rowsToRemove = Object.keys(this.renderedRows);
@@ -382,28 +392,24 @@ module ag.grid {
                 // check this row actually exists (in case overflow buffer window exceeds real data)
                 var node = this.rowModel.getVirtualRow(rowIndex);
                 if (node) {
-                    that.insertRow(node, rowIndex, mainRowWidth);
-                    rowsAdded.push(rowIndex);
+                    rowsNeeded = true;
                 }
             }
 
             // at this point, everything in our 'rowsToRemove' . . .
             this.removeVirtualRow(rowsToRemove);
 
+            if (rowsNeeded) {
+                // make sure async rendering is running
+                this.asyncRenderer.startIfNeeded();
+            }
             // if we are doing angular compiling, then do digest the scope here
-            if (this.gridOptionsWrapper.isAngularCompileRows()) {
+            //if (this.gridOptionsWrapper.isAngularCompileRows()) {
                 // we do it in a timeout, in case we are already in an apply
-                setTimeout(function () {
-                    that.$scope.$apply();
-                }, 0);
-            }
-
-            if (rowsAdded.length > 0) {
-                var newRows = rowsAdded.map(function(index) {
-                    return that.renderedRows[index].getRowNode().data;
-                });
-                this.eventService.dispatchEvent(Events.EVENT_VIRTUAL_ROWS_ADDED, newRows);
-            }
+                //setTimeout(function () {
+                //    that.$scope.$apply();
+                //}, 0);
+            //}
 
             //var end = new Date().getTime();
             //console.log(end-start);
@@ -424,12 +430,35 @@ module ag.grid {
 
             this.renderedRows[rowIndex] = renderedRow;
 
-            if (this.cellToBeEdited && this.cellToBeEdited.rowIndex === rowIndex) {
-                var renderedCell : RenderedCell = renderedRow.getRenderedCellForColumn(this.cellToBeEdited.column);
-                if (renderedCell.isCellEditable()) {
-                    renderedCell.startEditing();
-                    this.cellToBeEdited = null;
-                }
+            // ToDo: revise for async version
+            //if (this.cellToBeEdited && this.cellToBeEdited.rowIndex === rowIndex) {
+            //    var renderedCell : RenderedCell = renderedRow.getRenderedCellForColumn(this.cellToBeEdited.column);
+            //    if (renderedCell.isCellEditable()) {
+            //        renderedCell.startEditing();
+            //        this.cellToBeEdited = null;
+            //    }
+            //}
+        }
+
+        // Cengage additions
+        public addRow(rowIndex: number) : RenderedRow {
+            var node = this.rowModel.getVirtualRow(rowIndex);
+            this.insertRow(node, rowIndex, this.columnModel.getBodyContainerWidth());
+
+            return this.renderedRows[rowIndex];
+        }
+
+        public getRenderedRows() : {[key: string]: RenderedRow} {
+            return this.renderedRows;
+        }
+
+        public doAngularAppy() {
+            if (this.gridOptionsWrapper.isAngularCompileRows()) {
+                // we do it in a timeout, in case we are already in an apply
+                var that = this;
+                setTimeout(function () {
+                    that.$scope.$apply();
+                }, 0);
             }
         }
 
