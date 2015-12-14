@@ -117,27 +117,27 @@ module ag.grid {
                 first = 0;
                 last = columns.length;
             } else {
-                var firstColumnOnScreen : number;
-                var lastColumnOnScreen : number = columns.length;
-                var hPos: number;
+                var firstColumnOnScreen = 0;
+                var lastColumnOnScreen  = columns.length;
+                var hPos = 0;
 
                 for (var i = pinnedColCount; i < columns.length; i++) {
-                    hPos + columns[i].actualWidth;
+                    hPos += columns[i].actualWidth;
                     if (hPos >= viewportLeftPixel) {
                         firstColumnOnScreen = i;
                         break;
                     }
                 }
 
-                for (i++ ; i < columns; i++) {
-                    hPos + columns[i].actualWidth;
+                for (i++ ; i < columns.length; i++) {
+                    hPos += columns[i].actualWidth;
                     if (hPos >= viewportRightPixel) {
                         lastColumnOnScreen = i;
                         break;
                     }
                 }
 
-                first = firstColumnOnScreen + hBuffer;
+                first = firstColumnOnScreen - hBuffer;
                 last = lastColumnOnScreen + hBuffer;
             }
 

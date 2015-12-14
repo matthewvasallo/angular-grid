@@ -521,6 +521,7 @@ module ag.grid {
                 if (newLeftPosition !== lastLeftPosition) {
                     lastLeftPosition = newLeftPosition;
                     this.scrollHeader(newLeftPosition);
+                    this.requestDrawColumns();
                 }
 
                 if (newTopPosition !== lastTopPosition) {
@@ -569,6 +570,10 @@ module ag.grid {
             } else {
                 this.rowRenderer.drawVirtualRows();
             }
+        }
+
+        private requestDrawColumns() {
+            this.rowRenderer.ensureColumnsRendered();
         }
 
         private scrollHeader(bodyLeftPosition: any) {

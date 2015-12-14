@@ -452,6 +452,10 @@ module ag.grid {
             return this.renderedRows;
         }
 
+        public ensureColumnsRendered() {
+            this.asyncRenderer.startIfNeeded();
+        }
+
         public doAngularAppy() {
             if (this.gridOptionsWrapper.isAngularCompileRows()) {
                 // we do it in a timeout, in case we are already in an apply
