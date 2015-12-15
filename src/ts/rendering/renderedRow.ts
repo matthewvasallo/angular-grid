@@ -235,25 +235,25 @@ module ag.grid {
             }
         }
 
-        public drawPinnedAndColumnRange(left: number, right: number, maxToRender: number, columnOffsets: number[]) : number {
+        public drawPinnedAndColumnRange(left: number, right: number, maxToRender: number) : number {
             var renderedCount = this.drawCellRange(0, this.gridOptionsWrapper.getPinnedColCount(), maxToRender);
             if (renderedCount < maxToRender) {
-                renderedCount += this.drawCellRange(left, right, maxToRender - renderedCount, columnOffsets);
+                renderedCount += this.drawCellRange(left, right, maxToRender - renderedCount);
             }
 
             return renderedCount;
         }
 
-        private drawCellRange(left: number, right: number, maxToRender: number, columnOffsets?: number[]) : number {
+        private drawCellRange(left: number, right: number, maxToRender: number) : number {
             var columns = this.columnController.getDisplayedColumns();
             var renderedCount = 0;
             var offset = -1;
 
-            for (var i = left; i < right; i++) {
-                var column = columns[i];
+            for (var columnIndex = left; columnIndex < right; columnIndex++) {
+                var column = columns[columnIndex];
 
                 if (column && !this.renderedCells[column.index]) {
-                    var firstCol = i === 0;
+                    var firstCol = columnIndex === 0;
 
                     var renderedCell = new RenderedCell(firstCol, column,
                         this.$compile, this.rowRenderer, this.gridOptionsWrapper, this.expressionService,
@@ -266,12 +266,11 @@ module ag.grid {
                     if (column.pinned) {
                         this.vPinnedRow.appendChild(vGridCell);
                     } else {
-                        if (columnOffsets) {
-                            vGridCell.addStyles({
-                                position: "absolute",
-                                left: columnOffsets[i] + "px"
-                            });
-                        }
+                        // because body cells might not be added in order, they need to be positioned
+                        vGridCell.addStyles({
+                            position: "absolute",
+                            left: this.columnController.getOffsetForColumnIndex(columnIndex) + "px"
+                        });
                         this.vBodyRow.appendChild(vGridCell);
                     }
 

@@ -11,7 +11,7 @@ module ag.grid {
 
     export class RowRenderer {
 
-        private columnModel: any;
+        private columnModel: ColumnController;
         private gridOptionsWrapper: GridOptionsWrapper;
         private angularGrid: Grid;
         private selectionRendererFactory: SelectionRendererFactory;
@@ -51,7 +51,7 @@ module ag.grid {
         private cellToBeEdited: any;
         private editInProgress: boolean;
 
-        public init(columnModel: any, gridOptionsWrapper: GridOptionsWrapper, gridPanel: GridPanel,
+        public init(columnModel: ColumnController, gridOptionsWrapper: GridOptionsWrapper, gridPanel: GridPanel,
                     angularGrid: Grid, selectionRendererFactory: SelectionRendererFactory, $compile: any, $scope: any,
                     selectionController: SelectionController, expressionService: ExpressionService,
                     templateService: TemplateService, valueService: ValueService, eventService: EventService) {
