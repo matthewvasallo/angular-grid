@@ -37,6 +37,10 @@ module ag.grid {
             this.eBodyViewport = eBodyViewport;
             this.columnController = columnController;
 
+            if (gridOptionsWrapper.getBufferLevels()) {
+                this.levels = gridOptionsWrapper.getBufferLevels();
+            }
+
             this.levelCount = this.levels.length;
         }
 

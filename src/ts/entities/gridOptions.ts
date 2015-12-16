@@ -115,6 +115,7 @@ module ag.grid {
         groupIndentPerLevel?: number;
         leafNodeIndent?: number;
         cellsToRenderPerPass?: number;
+        bufferLevels?: any;
     }
 
 }
