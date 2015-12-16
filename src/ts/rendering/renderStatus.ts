@@ -11,7 +11,7 @@ module ag.grid {
         v: 5
     }, {
         h: -1,
-        v: 0
+        v: 10
     }];
 
     export class RenderStatus {
@@ -82,7 +82,8 @@ module ag.grid {
             var last: number;
             var rowCount = this.rowModel.getVirtualRowCount();
 
-            var vBuffer = this.levels[this.currentLevel].v;
+            var level = this.currentLevel < this.levelCount ? this.currentLevel : this.levelCount - 1;
+            var vBuffer = this.levels[level].v;
             if (vBuffer < 0 || this.gridOptionsWrapper.isForPrint()) {
                 first = 0;
                 last = rowCount - 1;
@@ -114,7 +115,7 @@ module ag.grid {
             var viewportLeftPixel = this.eBodyViewport.scrollLeft;
             var viewportRightPixel = viewportLeftPixel + this.eBodyViewport.offsetWidth;
 
-            var hBuffer = this.levels[this.currentLevel].h;
+            var hBuffer = this.levels[level].h;
             if (hBuffer < 0) {
                 first = 0;
                 last = columns.length;
