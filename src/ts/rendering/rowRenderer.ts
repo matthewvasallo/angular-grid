@@ -328,37 +328,10 @@ module ag.grid {
         }
 
         public drawVirtualRows() {
-            var first: any;
-            var last: any;
+            var areaToRender = this.renderStatus.getAreaToRender();
 
-            var rowCount = this.rowModel.getVirtualRowCount();
-
-            if (this.gridOptionsWrapper.isForPrint()) {
-                first = 0;
-                last = rowCount;
-            } else {
-                var topPixel = this.eBodyViewport.scrollTop;
-                var bottomPixel = topPixel + this.eBodyViewport.offsetHeight;
-
-                first = Math.floor(topPixel / this.gridOptionsWrapper.getRowHeight());
-                last = Math.floor(bottomPixel / this.gridOptionsWrapper.getRowHeight());
-
-                //add in buffer
-                var buffer = this.gridOptionsWrapper.getRowBuffer();
-                first = first - buffer;
-                last = last + buffer;
-
-                // adjust, in case buffer extended actual size
-                if (first < 0) {
-                    first = 0;
-                }
-                if (last > rowCount - 1) {
-                    last = rowCount - 1;
-                }
-            }
-
-            this.firstVirtualRenderedRow = first;
-            this.lastVirtualRenderedRow = last;
+            this.firstVirtualRenderedRow = areaToRender.top;
+            this.lastVirtualRenderedRow = areaToRender.bottom;
 
             this.ensureRowsRendered();
         }
@@ -452,7 +425,7 @@ module ag.grid {
             return this.renderedRows;
         }
 
-        public ensureColumnsRendered() {
+        public drawAfterScroll() {
             this.asyncRenderer.startIfNeeded();
         }
 

@@ -238,6 +238,7 @@ module ag.grid {
         public drawPinnedAndColumnRange(left: number, right: number, maxToRender: number) : number {
             var renderedCount = this.drawCellRange(0, this.gridOptionsWrapper.getPinnedColCount(), maxToRender);
             if (renderedCount < maxToRender) {
+                // keep note of range known to have been rendered, to avoid needless look-ups
                 renderedCount += this.drawCellRange(left, right, maxToRender - renderedCount);
             }
 

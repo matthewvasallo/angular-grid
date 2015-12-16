@@ -676,8 +676,8 @@ module ag.grid {
             var sizeChanged = this.eRootPanel.doLayout();
             // both of the two below should be done in gridPanel, the gridPanel should register 'resize' to the panel
             if (sizeChanged) {
-                this.rowRenderer.drawVirtualRows();
-                this.rowRenderer.ensureColumnsRendered();
+                //this.rowRenderer.drawVirtualRows();
+                this.rowRenderer.drawAfterScroll();
             }
         }
     }

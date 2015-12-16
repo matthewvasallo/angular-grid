@@ -544,36 +544,11 @@ module ag.grid {
         }
 
         private requestDrawVirtualRows() {
-            // if we are in IE or Safari, then we only redraw if there was no scroll event
-            // in the 50ms following this scroll event. without this, these browsers have
-            // a bad scrolling feel, where the redraws clog the scroll experience
-            // (makes the scroll clunky and sticky). this method is like throttling
-            // the scroll events.
-            var useScrollLag: boolean;
-            // let the user override scroll lag option
-            if (this.gridOptionsWrapper.isSuppressScrollLag()) {
-                useScrollLag = false;
-            } else if (this.gridOptionsWrapper.getIsScrollLag()) {
-                useScrollLag = this.gridOptionsWrapper.getIsScrollLag()();
-            } else {
-                useScrollLag = _.isBrowserIE() || _.isBrowserSafari();
-            }
-            if (useScrollLag) {
-                this.scrollLagCounter++;
-                var scrollLagCounterCopy = this.scrollLagCounter;
-                setTimeout( ()=> {
-                    if (this.scrollLagCounter === scrollLagCounterCopy) {
-                        this.rowRenderer.drawVirtualRows();
-                    }
-                }, 50);
-            // all other browsers, afaik, are fine, so just do the redraw
-            } else {
-                this.rowRenderer.drawVirtualRows();
-            }
+            this.rowRenderer.drawAfterScroll();
         }
 
         private requestDrawColumns() {
-            this.rowRenderer.ensureColumnsRendered();
+            this.rowRenderer.drawAfterScroll();
         }
 
         private scrollHeader(bodyLeftPosition: any) {
