@@ -225,17 +225,19 @@ module ag.grid {
             }
             // we only need to be worried about rendered rows, as this method is
             // called to whats rendered. if the row isn't rendered, we don't care
-            var indexesToRemove: any = [];
+            //var indexesToRemove: any = [];
+            var redrawNeeded = false;
             _.iterateObject(this.renderedRows, (key: string, renderedRow: RenderedRow)=> {
                 var rowNode = renderedRow.getRowNode();
                 if (rowNodes.indexOf(rowNode)>=0) {
-                    indexesToRemove.push(key);
+                    renderedRow.markForRefresh();
+                    redrawNeeded = true;
                 }
             });
-            // remove the rows
-            this.removeVirtualRow(indexesToRemove);
-            // add draw them again
-            this.drawVirtualRows();
+
+            if (redrawNeeded) {
+                this.asyncRenderer.startIfNeeded();
+            }
         }
 
         public refreshCells(rowNodes: RowNode[], colIds: string[]): void {

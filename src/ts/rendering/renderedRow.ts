@@ -19,6 +19,7 @@ module ag.grid {
         public vBodyRow: any;
 
         private renderedCells: {[key: number]: RenderedCell} = {};
+        private cellsToRefresh: {[key: number]: RenderedCell} = {};
         private scope: any;
         private node: any;
         private rowIndex: number;
@@ -235,6 +236,7 @@ module ag.grid {
             }
         }
 
+        // Cengage additions
         public drawPinnedAndColumnRange(left: number, right: number, maxToRender: number) : number {
             var renderedCount = this.drawCellRange(0, this.gridOptionsWrapper.getPinnedColCount(), maxToRender);
             if (renderedCount < maxToRender) {
@@ -255,6 +257,15 @@ module ag.grid {
 
                 if (column && !this.renderedCells[column.index]) {
                     var firstCol = columnIndex === 0;
+
+                    if (this.cellsToRefresh[column.index]) {
+                        var parent = this.vBodyRow;
+                        if (column.pinned) {
+                            parent = this.vPinnedRow;
+                        }
+                        parent.getElement().removeChild(this.cellsToRefresh[column.index].getVGridCell().getElement());
+                        delete this.cellsToRefresh[column.index];
+                    }
 
                     var renderedCell = new RenderedCell(firstCol, column,
                         this.$compile, this.rowRenderer, this.gridOptionsWrapper, this.expressionService,
@@ -285,10 +296,12 @@ module ag.grid {
             return renderedCount;
         }
 
+        public markForRefresh() {
+            this.cellsToRefresh = this.renderedCells;
+            this.renderedCells = {};
+        }
+
         private bindVirtualElement(vElement: ag.vdom.VHtmlElement): void {
-            //var html = vElement.toHtmlString();
-            //var element: Element = <Element> _.loadTemplate(html);
-            //vElement.elementAttached(element);
             vElement.bind();
         }
 
