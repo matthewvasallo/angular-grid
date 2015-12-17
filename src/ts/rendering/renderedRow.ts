@@ -23,6 +23,7 @@ module ag.grid {
         private scope: any;
         private node: any;
         private rowIndex: number;
+        private knownRenderedRange = {left: 0, right: 0};
 
         private cellRendererMap: {[key: string]: any};
 
@@ -237,11 +238,43 @@ module ag.grid {
         }
 
         // Cengage additions
+        private overLapsKnownRange(left: number, right: number) : boolean {
+            //return columnIndex >= this.knownRenderedRange.left || columnIndex <= this.knownRenderedRange.right;
+            var known = this.knownRenderedRange;
+            if (left >= known.left && left <= known.right) {
+                return true;
+            }
+            if (right >= known.left && right <= known.right) {
+                return true;
+            }
+            if (left < known.left && right > known.right) {
+                return true;
+            }
+
+            return false;
+        }
+
         public drawPinnedAndColumnRange(left: number, right: number, maxToRender: number) : number {
             var renderedCount = this.drawCellRange(0, this.gridOptionsWrapper.getPinnedColCount(), maxToRender);
             if (renderedCount < maxToRender) {
-                // keep note of range known to have been rendered, to avoid needless look-ups
-                renderedCount += this.drawCellRange(left, right, maxToRender - renderedCount);
+                var known = this.knownRenderedRange;
+                if (this.overLapsKnownRange(left, right)) {
+                    if (left < known.left) {
+                        // NB: to keep the book-keeping simple, we allow exceeding maxToRender
+                        renderedCount += this.drawCellRange(left, known.left, known.left - left);
+                        known.left = left;
+                    }
+                    if (renderedCount < maxToRender && right > known.right) {
+                        var count = this.drawCellRange(known.right, right, maxToRender - renderedCount);
+                        renderedCount += count;
+                        known.right += count;
+                    }
+                } else {
+                    var count = this.drawCellRange(left, right, maxToRender - renderedCount);
+                    renderedCount += count;
+                    known.left = left;
+                    known.right = left + count;
+                }
             }
 
             return renderedCount;
@@ -295,6 +328,7 @@ module ag.grid {
 
         public markForRefresh() {
             Utils.assign(this.cellsToRefresh, this.renderedCells);
+            this.knownRenderedRange = {left: 0, right: 0};
             this.renderedCells = {};
         }
 
