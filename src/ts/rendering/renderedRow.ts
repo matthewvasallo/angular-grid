@@ -297,7 +297,7 @@ module ag.grid {
         }
 
         public markForRefresh() {
-            this.cellsToRefresh = this.renderedCells;
+            Utils.assign(this.cellsToRefresh, this.renderedCells);
             this.renderedCells = {};
         }
 
