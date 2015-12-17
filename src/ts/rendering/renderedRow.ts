@@ -89,10 +89,6 @@ module ag.grid {
             this.node = node;
             this.scope = this.createChildScopeOrNull(node.data);
 
-            //if (!rowIsHeaderThatSpans) {
-            //    this.drawNormalRow();
-            //}
-
             this.addDynamicStyles();
             this.addDynamicClasses();
 
@@ -211,30 +207,6 @@ module ag.grid {
 
         public isGroup(): boolean {
             return this.node.group === true;
-        }
-
-        private drawNormalRow() {
-            var columns = this.columnController.getDisplayedColumns();
-            for (var i = 0; i<columns.length; i++) {
-                var column = columns[i];
-                var firstCol = i === 0;
-
-                var renderedCell = new RenderedCell(firstCol, column,
-                    this.$compile, this.rowRenderer, this.gridOptionsWrapper, this.expressionService,
-                    this.selectionRendererFactory, this.selectionController, this.templateService,
-                    this.cellRendererMap, this.node, this.rowIndex, this.scope, this.columnController,
-                    this.valueService, this.eventService);
-
-                var vGridCell = renderedCell.getVGridCell();
-
-                if (column.pinned) {
-                    this.vPinnedRow.appendChild(vGridCell);
-                } else {
-                    this.vBodyRow.appendChild(vGridCell);
-                }
-
-                this.renderedCells[column.index] = renderedCell;
-            }
         }
 
         // Cengage additions
