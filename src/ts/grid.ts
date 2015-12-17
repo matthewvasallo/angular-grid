@@ -185,7 +185,7 @@ module ag.grid {
                 columnController, popupService, valueService);
             selectionRendererFactory.init(this, selectionController);
             columnController.init(this, selectionRendererFactory, gridOptionsWrapper,
-                expressionService, valueService, masterSlaveService, eventService);
+                expressionService, valueService, masterSlaveService, eventService, gridPanel);
             rowRenderer.init(columnController, gridOptionsWrapper, gridPanel, this, selectionRendererFactory, $compile,
                 $scope, selectionController, expressionService, templateService, valueService, eventService);
             headerRenderer.init(gridOptionsWrapper, columnController, gridPanel, this, filterManager,

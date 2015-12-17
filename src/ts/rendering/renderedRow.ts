@@ -24,6 +24,7 @@ module ag.grid {
         private node: any;
         private rowIndex: number;
         private knownRenderedRange = {left: 0, right: 0};
+        private rowIsHeaderThatSpans : boolean;
 
         private cellRendererMap: {[key: string]: any};
 
@@ -79,6 +80,7 @@ module ag.grid {
 
             var groupHeaderTakesEntireRow = this.gridOptionsWrapper.isGroupUseEntireRow();
             var rowIsHeaderThatSpans = node.group && groupHeaderTakesEntireRow;
+            this.rowIsHeaderThatSpans = rowIsHeaderThatSpans;
 
             this.vBodyRow = this.createRowContainer();
             if (this.pinning) {
@@ -227,6 +229,10 @@ module ag.grid {
         }
 
         public drawPinnedAndColumnRange(left: number, right: number, maxToRender: number) : number {
+            if (this.rowIsHeaderThatSpans) {
+                return 1;
+            }
+
             var renderedCount = this.drawCellRange(0, this.gridOptionsWrapper.getPinnedColCount(), maxToRender);
             if (renderedCount < maxToRender) {
                 var known = this.knownRenderedRange;
@@ -282,7 +288,7 @@ module ag.grid {
                             // because body cells might not be added in order, they need to be positioned
                             vGridCell.addStyles({
                                 position: "absolute",
-                                left: this.columnController.getOffsetForColumnIndex(columnIndex) + "px"
+                                left: Utils.addPxIfNumber(this.columnController.getOffsetForColumnIndex(columnIndex))
                             });
                             this.vBodyRow.appendChild(vGridCell);
                         }

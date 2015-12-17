@@ -48,6 +48,7 @@ module ag.grid {
         private selectionRendererFactory: SelectionRendererFactory;
         private expressionService: ExpressionService;
         private masterSlaveController: MasterSlaveService;
+        private gridPanel: GridPanel;
 
         private allColumns: Column[]; // every column available
         private visibleColumns: Column[]; // allColumns we want to show, regardless of groups
@@ -70,7 +71,7 @@ module ag.grid {
         public init(angularGrid: Grid, selectionRendererFactory: SelectionRendererFactory,
                     gridOptionsWrapper: GridOptionsWrapper, expressionService: ExpressionService,
                     valueService: ValueService, masterSlaveController: MasterSlaveService,
-                    eventService: EventService) {
+                    eventService: EventService, gridPanel: GridPanel) {
             this.gridOptionsWrapper = gridOptionsWrapper;
             this.angularGrid = angularGrid;
             this.selectionRendererFactory = selectionRendererFactory;
@@ -78,6 +79,7 @@ module ag.grid {
             this.valueService = valueService;
             this.masterSlaveController = masterSlaveController;
             this.eventService = eventService;
+            this.gridPanel = gridPanel;
 
             this.pinnedColumnCount = gridOptionsWrapper.getPinnedColCount();
             // check for negative or non-number values
@@ -608,9 +610,16 @@ module ag.grid {
         private addToColumnOffsets(initialOffset: number, columns: Column[]) : number {
             var offsets = this.columnOffsets;
             var offset = initialOffset;
+            var bodyWidth = this.gridPanel.getBodyViewport().offsetWidth;
             for (var i = 0; i < columns.length; i++) {
                 offsets.push(offset);
-                offset += columns[i].actualWidth;
+                var width = columns[i].actualWidth;
+                var widthStr = width + "";
+                if (widthStr.indexOf("%") > 0) {
+                    var percent = Number(widthStr.substring(0, widthStr.indexOf("%")));
+                    width = Math.floor(bodyWidth * percent / 100);
+                }
+                offset += width;
             }
 
             return offset;
