@@ -258,32 +258,29 @@ module ag.grid {
                 if (column && !this.renderedCells[column.index]) {
                     var firstCol = columnIndex === 0;
 
+                    var renderedCell = this.cellsToRefresh[column.index];
                     if (this.cellsToRefresh[column.index]) {
-                        var parent = this.vBodyRow;
-                        if (column.pinned) {
-                            parent = this.vPinnedRow;
-                        }
-                        parent.getElement().removeChild(this.cellsToRefresh[column.index].getVGridCell().getElement());
+                        renderedCell.refreshCell();
                         delete this.cellsToRefresh[column.index];
-                    }
-
-                    var renderedCell = new RenderedCell(firstCol, column,
-                        this.$compile, this.rowRenderer, this.gridOptionsWrapper, this.expressionService,
-                        this.selectionRendererFactory, this.selectionController, this.templateService,
-                        this.cellRendererMap, this.node, this.rowIndex, this.scope, this.columnController,
-                        this.valueService, this.eventService);
-
-                    var vGridCell = renderedCell.getVGridCell();
-
-                    if (column.pinned) {
-                        this.vPinnedRow.appendChild(vGridCell);
                     } else {
-                        // because body cells might not be added in order, they need to be positioned
-                        vGridCell.addStyles({
-                            position: "absolute",
-                            left: this.columnController.getOffsetForColumnIndex(columnIndex) + "px"
-                        });
-                        this.vBodyRow.appendChild(vGridCell);
+                        renderedCell = new RenderedCell(firstCol, column,
+                            this.$compile, this.rowRenderer, this.gridOptionsWrapper, this.expressionService,
+                            this.selectionRendererFactory, this.selectionController, this.templateService,
+                            this.cellRendererMap, this.node, this.rowIndex, this.scope, this.columnController,
+                            this.valueService, this.eventService);
+
+                        var vGridCell = renderedCell.getVGridCell();
+
+                        if (column.pinned) {
+                            this.vPinnedRow.appendChild(vGridCell);
+                        } else {
+                            // because body cells might not be added in order, they need to be positioned
+                            vGridCell.addStyles({
+                                position: "absolute",
+                                left: this.columnController.getOffsetForColumnIndex(columnIndex) + "px"
+                            });
+                            this.vBodyRow.appendChild(vGridCell);
+                        }
                     }
 
                     this.renderedCells[column.index] = renderedCell;
