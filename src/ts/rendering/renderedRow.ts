@@ -25,6 +25,7 @@ module ag.grid {
         private rowIndex: number;
         private knownRenderedRange = {left: 0, right: 0};
         private rowIsHeaderThatSpans : boolean;
+        private columnToEdit: Column;
 
         private cellRendererMap: {[key: string]: any};
 
@@ -295,6 +296,12 @@ module ag.grid {
                     }
 
                     this.renderedCells[column.index] = renderedCell;
+
+                    if (this.columnToEdit === column && renderedCell.isCellEditable()) {
+                        renderedCell.startEditing();
+                        this.columnToEdit = null;
+                    }
+
                     if (++renderedCount > maxToRender) {
                         break;
                     }
@@ -302,6 +309,10 @@ module ag.grid {
             }
 
             return renderedCount;
+        }
+
+        public noteColumnToEdit(column: Column) {
+            this.columnToEdit = column;
         }
 
         public markForRefresh() {

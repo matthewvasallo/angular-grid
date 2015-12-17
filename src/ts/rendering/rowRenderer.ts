@@ -405,14 +405,10 @@ module ag.grid {
 
             this.renderedRows[rowIndex] = renderedRow;
 
-            // ToDo: revise for async version
-            //if (this.cellToBeEdited && this.cellToBeEdited.rowIndex === rowIndex) {
-            //    var renderedCell : RenderedCell = renderedRow.getRenderedCellForColumn(this.cellToBeEdited.column);
-            //    if (renderedCell.isCellEditable()) {
-            //        renderedCell.startEditing();
-            //        this.cellToBeEdited = null;
-            //    }
-            //}
+            if (this.cellToBeEdited && this.cellToBeEdited.rowIndex === rowIndex) {
+                renderedRow.noteColumnToEdit(this.cellToBeEdited.column);
+                this.cellToBeEdited = null;
+            }
         }
 
         // Cengage additions
