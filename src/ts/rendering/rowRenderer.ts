@@ -431,6 +431,10 @@ module ag.grid {
             this.asyncRenderer.startIfNeeded();
         }
 
+        public resetRenderRegion() {
+            this.renderStatus.resetLevel();
+        }
+
         public doAngularAppy() {
             if (this.gridOptionsWrapper.isAngularCompileRows()) {
                 // we do it in a timeout, in case we are already in an apply

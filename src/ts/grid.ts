@@ -481,6 +481,7 @@ module ag.grid {
         // remain.
         public updateModelAndRefresh(step: any, refreshFromIndex?: any) {
             this.inMemoryRowController.updateModel(step);
+            this.rowRenderer.resetRenderRegion();
             this.rowRenderer.refreshView(refreshFromIndex);
         }
 
