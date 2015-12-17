@@ -273,10 +273,12 @@ module ag.grid {
             if (viewportScrolledPastCol) {
                 // if viewport's left side is after col's left side, scroll right to pull col into viewport at left
                 this.eBodyViewport.scrollLeft = colLeftPixel;
+                this.requestDrawColumns();
             } else if (viewportScrolledBeforeCol) {
                 // if viewport's right side is before col's right side, scroll left to pull col into viewport at right
                 var newScrollPosition = colRightPixel - viewportWidth;
                 this.eBodyViewport.scrollLeft = newScrollPosition;
+                this.requestDrawColumns();
             }
             // otherwise, col is already in view, so do nothing
         }
