@@ -9,9 +9,6 @@ module ag.grid {
     }, {
         h: 5,
         v: 5
-    }, {
-        h: -1,
-        v: 10
     }];
 
     export class RenderStatus {
@@ -20,6 +17,8 @@ module ag.grid {
         private levelCount : number;
 
         private areaToRender : {top: number; left: number; bottom: number; right: number} = null;
+
+        private maxVerticalBuffer: number;
 
         private gridOptionsWrapper: GridOptionsWrapper;
         private gridPanel: GridPanel;
@@ -42,6 +41,7 @@ module ag.grid {
             }
 
             this.levelCount = this.levels.length;
+            this.getMaxVerticalBuffer();
         }
 
         public setRowModel(rowModel: any) {
@@ -70,11 +70,33 @@ module ag.grid {
             this.areaToRender = null;
         }
 
+        private getMaxVerticalBuffer() {
+            var max = 0;
+            this.levels.forEach(function(level) {
+                if (level.v > max) {
+                    max = level.v;
+                }
+            });
+
+            this.maxVerticalBuffer = max;
+        }
+
         public nextLevel() {
             if (this.currentLevel < this.levelCount) {
                 this.currentLevel++;
                 this.areaToRender = null;
             }
+        }
+
+        private getFirstRowOnScreen() : number {
+            var topPixel = this.eBodyViewport.scrollTop;
+            return Math.floor(topPixel / this.gridOptionsWrapper.getRowHeight());
+        }
+
+        private getLastRowOnScreen() : number {
+            var topPixel = this.eBodyViewport.scrollTop;
+            var bottomPixel = topPixel + this.eBodyViewport.offsetHeight;
+            return Math.floor(bottomPixel / this.gridOptionsWrapper.getRowHeight());
         }
 
         private computeAreaToRender() {
@@ -88,15 +110,9 @@ module ag.grid {
                 first = 0;
                 last = rowCount - 1;
             } else {
-                var topPixel = this.eBodyViewport.scrollTop;
-                var bottomPixel = topPixel + this.eBodyViewport.offsetHeight;
-
-                first = Math.floor(topPixel / this.gridOptionsWrapper.getRowHeight());
-                last = Math.floor(bottomPixel / this.gridOptionsWrapper.getRowHeight());
-
                 //add in buffer
-                first = first - vBuffer;
-                last = last + vBuffer;
+                first = this.getFirstRowOnScreen() - vBuffer;
+                last = this.getLastRowOnScreen() + vBuffer;
 
                 // adjust, in case buffer extended actual size
                 if (first < 0) {
@@ -136,6 +152,14 @@ module ag.grid {
 
             this.areaToRender.left = first;
             this.areaToRender.right = last;
+        }
+
+        public getFirstRowToRetain() : number {
+            return Math.max(0, this.getFirstRowOnScreen() - this.maxVerticalBuffer);
+        }
+
+        public getLastRowToRetain() : number {
+            return Math.min(this.rowModel.getVirtualRowCount() - 1, this.getLastRowOnScreen() + this.maxVerticalBuffer);
         }
     }
 }

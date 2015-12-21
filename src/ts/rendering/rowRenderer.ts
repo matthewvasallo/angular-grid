@@ -330,10 +330,8 @@ module ag.grid {
         }
 
         public drawVirtualRows() {
-            var areaToRender = this.renderStatus.getAreaToRender();
-
-            this.firstVirtualRenderedRow = areaToRender.top;
-            this.lastVirtualRenderedRow = areaToRender.bottom;
+            this.firstVirtualRenderedRow = this.renderStatus.getFirstRowToRetain();
+            this.lastVirtualRenderedRow = this.renderStatus.getLastRowToRetain();
 
             this.ensureRowsRendered();
         }
@@ -424,6 +422,9 @@ module ag.grid {
         }
 
         public drawAfterScroll() {
+            // remove any rows we don't want anymore
+            this.drawVirtualRows();
+            // if there was horizontal motion, make sure rendering is in progress to notice it.
             this.asyncRenderer.startIfNeeded();
         }
 
