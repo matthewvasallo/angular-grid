@@ -235,25 +235,37 @@ module ag.grid {
             }
 
             var renderedCount = this.drawCellRange(0, this.gridOptionsWrapper.getPinnedColCount(), maxToRender);
-            if (renderedCount < maxToRender) {
-                var known = this.knownRenderedRange;
+            var known = this.knownRenderedRange;
+            while (renderedCount < maxToRender) {
+                var addedLeft = 0, addedRight = 0;
                 if (this.overLapsKnownRange(left, right)) {
                     if (left < known.left) {
-                        // NB: to keep the book-keeping simple, we allow exceeding maxToRender
-                        renderedCount += this.drawCellRange(left, known.left, known.left - left);
-                        known.left = left;
+                        var start = Math.max(known.left - (maxToRender - renderedCount), left);
+                        addedLeft = this.drawCellRange(start, known.left, maxToRender - renderedCount);
+                        known.left = start;
                     }
-                    if (renderedCount < maxToRender && right > known.right) {
-                        var count = this.drawCellRange(known.right, right, maxToRender - renderedCount);
-                        renderedCount += count;
-                        known.right += count;
+                    if (renderedCount + addedLeft < maxToRender && right > known.right) {
+                        addedRight = this.drawCellRange(known.right, right, maxToRender - renderedCount);
                     }
                 } else {
-                    var count = this.drawCellRange(left, right, maxToRender - renderedCount);
-                    renderedCount += count;
-                    known.left = left;
-                    known.right = left + count;
+                    addedRight = this.drawCellRange(left, right, maxToRender - renderedCount);
+                    known.left = known.right = left;
                 }
+
+                if ((renderedCount + addedLeft + addedRight) < maxToRender) {
+                    // we went all the way without hitting the max
+                    known.right = right;
+                } else {
+                    // cautiously update based on what we added
+                    known.right += addedRight;
+                }
+
+                if (addedLeft + addedRight === 0) {
+                    // nothing left to render in this range
+                    break;
+                }
+
+                renderedCount += addedLeft + addedRight;
             }
 
             return renderedCount;
@@ -271,7 +283,7 @@ module ag.grid {
                     var firstCol = columnIndex === 0;
 
                     var renderedCell = this.cellsToRefresh[column.index];
-                    if (this.cellsToRefresh[column.index]) {
+                    if (renderedCell) {
                         renderedCell.refreshCell();
                         delete this.cellsToRefresh[column.index];
                     } else {
