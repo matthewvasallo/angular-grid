@@ -213,22 +213,6 @@ module ag.grid {
         }
 
         // Cengage additions
-        private overLapsKnownRange(left: number, right: number) : boolean {
-            //return columnIndex >= this.knownRenderedRange.left || columnIndex <= this.knownRenderedRange.right;
-            var known = this.knownRenderedRange;
-            if (left >= known.left && left <= known.right) {
-                return true;
-            }
-            if (right >= known.left && right <= known.right) {
-                return true;
-            }
-            if (left < known.left && right > known.right) {
-                return true;
-            }
-
-            return false;
-        }
-
         public drawPinnedAndColumnRange(left: number, right: number, maxToRender: number) : number {
             if (this.rowIsHeaderThatSpans) {
                 return 1;
@@ -236,37 +220,30 @@ module ag.grid {
 
             var renderedCount = this.drawCellRange(0, this.gridOptionsWrapper.getPinnedColCount(), maxToRender);
             var known = this.knownRenderedRange;
-            while (renderedCount < maxToRender) {
-                var addedLeft = 0, addedRight = 0;
-                if (this.overLapsKnownRange(left, right)) {
+            var newCount = 1;
+            while (renderedCount < maxToRender && newCount > 0) {
+                newCount = 0;
+                if (right < known.left || left > known.right) {
+                    // discontinuous, just track the new range
+                    newCount = this.drawCellRange(left, right, maxToRender - renderedCount);
+                    known.left = left;
+                    known.right = left + newCount;
+                } else {
                     if (left < known.left) {
                         var start = Math.max(known.left - (maxToRender - renderedCount), left);
-                        addedLeft = this.drawCellRange(start, known.left, maxToRender - renderedCount);
+                        newCount = this.drawCellRange(start, known.left, maxToRender - renderedCount);
                         known.left = start;
                     }
-                    if (renderedCount + addedLeft < maxToRender && right > known.right) {
-                        addedRight = this.drawCellRange(known.right, right, maxToRender - renderedCount);
+                    if (right > known.right) {
+                        var stop = Math.min(right, known.right + (maxToRender - renderedCount - newCount));
+                        newCount += this.drawCellRange(known.right, stop, maxToRender - renderedCount - newCount);
+                        known.right = stop;
                     }
-                } else {
-                    addedRight = this.drawCellRange(left, right, maxToRender - renderedCount);
-                    known.left = known.right = left;
                 }
 
-                if ((renderedCount + addedLeft + addedRight) < maxToRender) {
-                    // we went all the way without hitting the max
-                    known.right = right;
-                } else {
-                    // cautiously update based on what we added
-                    known.right += addedRight;
-                }
-
-                if (addedLeft + addedRight === 0) {
-                    // nothing left to render in this range
-                    break;
-                }
-
-                renderedCount += addedLeft + addedRight;
+                renderedCount += newCount;
             }
+            this.knownRenderedRange = known;
 
             return renderedCount;
         }
