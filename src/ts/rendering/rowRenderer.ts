@@ -644,9 +644,7 @@ module ag.grid {
 
                 var renderedCell: RenderedCell = this.getCellAtRowColumn(position['y'].current, position['x'].current, true);
                 if (renderedCell) {
-                    //this.editCellAtRowColumn(position['y'].current, position['x'].current);
                     renderedCell.startEditing();
-                    // ensure column visible: here or in startEditing?
                     done = true;
                 } else {
                     // note position to edit when rendered
@@ -655,7 +653,11 @@ module ag.grid {
                         column: currentCol
                     };
                     this.gridPanel.ensureIndexVisible(position['y'].current);
-                    // also ensure horizontal visible?
+                    var renderedRow : RenderedRow = this.renderedRows[this.cellToBeEdited.rowIndex];
+                    if (renderedRow) {
+                        renderedRow.noteColumnToEdit(this.cellToBeEdited.column);
+                    }
+                    this.gridPanel.ensureColIndexVisible(this.columnModel.getDisplayedColIndex(currentCol));
                     done = true;
                 }
             }
