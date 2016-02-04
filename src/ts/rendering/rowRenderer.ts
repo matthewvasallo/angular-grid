@@ -1,6 +1,8 @@
 /// <reference path="../utils.ts" />
 /// <reference path="../constants.ts" />
 /// <reference path="renderedRow.ts" />
+/// <reference path="renderStatus.ts" />
+/// <reference path="asyncRenderer.ts" />
 /// <reference path="../cellRenderers/groupCellRendererFactory.ts" />
 
 module ag.grid {
@@ -9,7 +11,7 @@ module ag.grid {
 
     export class RowRenderer {
 
-        private columnModel: any;
+        private columnModel: ColumnController;
         private gridOptionsWrapper: GridOptionsWrapper;
         private angularGrid: Grid;
         private selectionRendererFactory: SelectionRendererFactory;
@@ -31,6 +33,9 @@ module ag.grid {
         private renderedTopFloatingRows: RenderedRow[] = [];
         private renderedBottomFloatingRows: RenderedRow[] = [];
 
+        private renderStatus: RenderStatus;
+        private asyncRenderer: AsyncRenderer;
+
         private eAllBodyContainers: HTMLElement[];
         private eAllPinnedContainers: HTMLElement[];
 
@@ -46,7 +51,7 @@ module ag.grid {
         private cellToBeEdited: any;
         private editInProgress: boolean;
 
-        public init(columnModel: any, gridOptionsWrapper: GridOptionsWrapper, gridPanel: GridPanel,
+        public init(columnModel: ColumnController, gridOptionsWrapper: GridOptionsWrapper, gridPanel: GridPanel,
                     angularGrid: Grid, selectionRendererFactory: SelectionRendererFactory, $compile: any, $scope: any,
                     selectionController: SelectionController, expressionService: ExpressionService,
                     templateService: TemplateService, valueService: ValueService, eventService: EventService) {
@@ -74,10 +79,15 @@ module ag.grid {
             // map of row ids to row objects. keeps track of which elements
             // are rendered for which rows in the dom.
             this.renderedRows = {};
+
+            // Cengage addition
+            this.renderStatus = new RenderStatus(gridOptionsWrapper, gridPanel, this, columnModel, this.eBodyViewport);
+            this.asyncRenderer = new AsyncRenderer(gridOptionsWrapper, this, this.renderStatus, eventService);
         }
 
         public setRowModel(rowModel: any) {
             this.rowModel = rowModel;
+            this.renderStatus.setRowModel(rowModel);
         }
 
         public onIndividualColumnResized(column: Column) {
@@ -215,17 +225,19 @@ module ag.grid {
             }
             // we only need to be worried about rendered rows, as this method is
             // called to whats rendered. if the row isn't rendered, we don't care
-            var indexesToRemove: any = [];
+            //var indexesToRemove: any = [];
+            var redrawNeeded = false;
             _.iterateObject(this.renderedRows, (key: string, renderedRow: RenderedRow)=> {
                 var rowNode = renderedRow.getRowNode();
                 if (rowNodes.indexOf(rowNode)>=0) {
-                    indexesToRemove.push(key);
+                    renderedRow.markForRefresh();
+                    redrawNeeded = true;
                 }
             });
-            // remove the rows
-            this.removeVirtualRow(indexesToRemove);
-            // add draw them again
-            this.drawVirtualRows();
+
+            if (redrawNeeded) {
+                this.asyncRenderer.startIfNeeded();
+            }
         }
 
         public refreshCells(rowNodes: RowNode[], colIds: string[]): void {
@@ -318,37 +330,8 @@ module ag.grid {
         }
 
         public drawVirtualRows() {
-            var first: any;
-            var last: any;
-
-            var rowCount = this.rowModel.getVirtualRowCount();
-
-            if (this.gridOptionsWrapper.isForPrint()) {
-                first = 0;
-                last = rowCount;
-            } else {
-                var topPixel = this.eBodyViewport.scrollTop;
-                var bottomPixel = topPixel + this.eBodyViewport.offsetHeight;
-
-                first = Math.floor(topPixel / this.gridOptionsWrapper.getRowHeight());
-                last = Math.floor(bottomPixel / this.gridOptionsWrapper.getRowHeight());
-
-                //add in buffer
-                var buffer = this.gridOptionsWrapper.getRowBuffer();
-                first = first - buffer;
-                last = last + buffer;
-
-                // adjust, in case buffer extended actual size
-                if (first < 0) {
-                    first = 0;
-                }
-                if (last > rowCount - 1) {
-                    last = rowCount - 1;
-                }
-            }
-
-            this.firstVirtualRenderedRow = first;
-            this.lastVirtualRenderedRow = last;
+            this.firstVirtualRenderedRow = this.renderStatus.getFirstRowToRetain();
+            this.lastVirtualRenderedRow = this.renderStatus.getLastRowToRetain();
 
             this.ensureRowsRendered();
         }
@@ -367,7 +350,7 @@ module ag.grid {
 
             var mainRowWidth = this.columnModel.getBodyContainerWidth();
             var that = this;
-            var rowsAdded : any[] = [];
+            var rowsNeeded = false;
 
             // at the end, this array will contain the items we need to remove
             var rowsToRemove = Object.keys(this.renderedRows);
@@ -382,28 +365,24 @@ module ag.grid {
                 // check this row actually exists (in case overflow buffer window exceeds real data)
                 var node = this.rowModel.getVirtualRow(rowIndex);
                 if (node) {
-                    that.insertRow(node, rowIndex, mainRowWidth);
-                    rowsAdded.push(rowIndex);
+                    rowsNeeded = true;
                 }
             }
 
             // at this point, everything in our 'rowsToRemove' . . .
             this.removeVirtualRow(rowsToRemove);
 
+            if (rowsNeeded) {
+                // make sure async rendering is running
+                this.asyncRenderer.startIfNeeded();
+            }
             // if we are doing angular compiling, then do digest the scope here
-            if (this.gridOptionsWrapper.isAngularCompileRows()) {
+            //if (this.gridOptionsWrapper.isAngularCompileRows()) {
                 // we do it in a timeout, in case we are already in an apply
-                setTimeout(function () {
-                    that.$scope.$apply();
-                }, 0);
-            }
-
-            if (rowsAdded.length > 0) {
-                var newRows = rowsAdded.map(function(index) {
-                    return that.renderedRows[index].getRowNode().data;
-                });
-                this.eventService.dispatchEvent(Events.EVENT_VIRTUAL_ROWS_ADDED, newRows);
-            }
+                //setTimeout(function () {
+                //    that.$scope.$apply();
+                //}, 0);
+            //}
 
             //var end = new Date().getTime();
             //console.log(end-start);
@@ -425,11 +404,41 @@ module ag.grid {
             this.renderedRows[rowIndex] = renderedRow;
 
             if (this.cellToBeEdited && this.cellToBeEdited.rowIndex === rowIndex) {
-                var renderedCell : RenderedCell = renderedRow.getRenderedCellForColumn(this.cellToBeEdited.column);
-                if (renderedCell.isCellEditable()) {
-                    renderedCell.startEditing();
-                    this.cellToBeEdited = null;
-                }
+                renderedRow.noteColumnToEdit(this.cellToBeEdited.column);
+                this.cellToBeEdited = null;
+            }
+        }
+
+        // Cengage additions
+        public addRow(rowIndex: number) : RenderedRow {
+            var node = this.rowModel.getVirtualRow(rowIndex);
+            this.insertRow(node, rowIndex, this.columnModel.getBodyContainerWidth());
+
+            return this.renderedRows[rowIndex];
+        }
+
+        public getRenderedRows() : {[key: string]: RenderedRow} {
+            return this.renderedRows;
+        }
+
+        public drawAfterScroll() {
+            // remove any rows we don't want anymore
+            this.drawVirtualRows();
+            // if there was horizontal motion, make sure rendering is in progress to notice it.
+            this.asyncRenderer.startIfNeeded();
+        }
+
+        public resetRenderRegion() {
+            this.renderStatus.resetLevel();
+        }
+
+        public doAngularAppy() {
+            if (this.gridOptionsWrapper.isAngularCompileRows()) {
+                // we do it in a timeout, in case we are already in an apply
+                var that = this;
+                setTimeout(function () {
+                    that.$scope.$apply();
+                }, 0);
             }
         }
 

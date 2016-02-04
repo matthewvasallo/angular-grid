@@ -103,6 +103,8 @@ module ag.grid {
         public getEditKeyMap() { return this.gridOptions.editKeyMap || {}; }
         public getGroupIndentPerLevel() { return this.gridOptions.groupIndentPerLevel; }
         public getLeafNodeIndent() { return this.gridOptions.leafNodeIndent; }
+        public getCellsToRenderPerPass() {return this.gridOptions.cellsToRenderPerPass || 50; }
+        public getBufferLevels() { return this.gridOptions.bufferLevels; }
 
         // properties
         public getHeaderHeight(): number {

@@ -114,6 +114,8 @@ module ag.grid {
         editKeyMap?: any;
         groupIndentPerLevel?: number;
         leafNodeIndent?: number;
+        cellsToRenderPerPass?: number;
+        bufferLevels?: any;
     }
 
 }

@@ -386,6 +386,13 @@ module ag.grid {
             return this.isSafari;
         }
 
+        // Cengage addition
+        static addPxIfNumber(width: number) : string {
+            var widthPX = width + "";
+            widthPX = widthPX.match(/^[\d\.]+$/) ? widthPX + "px" : widthPX;
+
+            return widthPX;
+        }
     }
 }
 

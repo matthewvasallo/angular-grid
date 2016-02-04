@@ -48,6 +48,7 @@ module ag.grid {
         private selectionRendererFactory: SelectionRendererFactory;
         private expressionService: ExpressionService;
         private masterSlaveController: MasterSlaveService;
+        private gridPanel: GridPanel;
 
         private allColumns: Column[]; // every column available
         private visibleColumns: Column[]; // allColumns we want to show, regardless of groups
@@ -62,13 +63,15 @@ module ag.grid {
 
         private eventService: EventService;
 
+        private columnOffsets : number[] = [];
+
         constructor() {
         }
 
         public init(angularGrid: Grid, selectionRendererFactory: SelectionRendererFactory,
                     gridOptionsWrapper: GridOptionsWrapper, expressionService: ExpressionService,
                     valueService: ValueService, masterSlaveController: MasterSlaveService,
-                    eventService: EventService) {
+                    eventService: EventService, gridPanel: GridPanel) {
             this.gridOptionsWrapper = gridOptionsWrapper;
             this.angularGrid = angularGrid;
             this.selectionRendererFactory = selectionRendererFactory;
@@ -76,6 +79,7 @@ module ag.grid {
             this.valueService = valueService;
             this.masterSlaveController = masterSlaveController;
             this.eventService = eventService;
+            this.gridPanel = gridPanel;
 
             this.pinnedColumnCount = gridOptionsWrapper.getPinnedColCount();
             // check for negative or non-number values
@@ -519,17 +523,32 @@ module ag.grid {
         }
 
         // Cengage addition
-        public getOffsetForColumnIndex(colIndex: any): any {
-            var offset = 0;
-            var min = Math.min(colIndex, this.allColumns.length);
-            for (var i = 0; i < min; i++) {
-                var col = this.allColumns[i];
-                if (!col.pinned && this.displayedColumns.indexOf(col) >= 0) {
-                    offset += col.actualWidth;
+        public getOffsetForColumnIndex(colIndex: any) : any {
+            return this.columnOffsets[colIndex];
+        }
+
+        public getColumnForOffset(offset: number) : number {
+            return this.findNextGreaterOffset(offset, this.pinnedColumnCount,  this.displayedColumns.length);
+        }
+
+        private findNextGreaterOffset(target: number, first: number, last: number) {
+            var offsets = this.columnOffsets;
+            while (last-first > 6) {
+                var mid = Math.floor((last+first) / 2);
+                if (offsets[mid] < target) {
+                    first = mid;
+                } else {
+                    last = mid;
                 }
             }
 
-            return offset;
+            for (var i = first; i <= last; i++) {
+                if (offsets[i] > target) {
+                    return i;
+                }
+            }
+
+            return this.displayedColumns.length - 1;
         }
 
         // called from API
@@ -564,19 +583,46 @@ module ag.grid {
         }
 
         private updateDisplayedColumns() {
+            this.columnOffsets = [];
 
             if (!this.gridOptionsWrapper.isGroupHeaders()) {
                 // if not grouping by headers, then pull visible cols
                 this.displayedColumns = this.visibleColumns;
+                this.addToColumnOffsets(0, this.displayedColumns);
             } else {
                 // if grouping, then only show col as per group rules
                 this.displayedColumns = [];
+                var offset = 0;
+                var resetAfterPinned = true;
                 for (var i = 0; i < this.columnGroups.length; i++) {
                     var group = this.columnGroups[i];
+                    if (resetAfterPinned && ! group.pinned) {
+                        offset = 0;
+                        resetAfterPinned = false;
+                    }
                     group.addToVisibleColumns(this.displayedColumns);
+                    offset = this.addToColumnOffsets(offset, group.displayedColumns);
                 }
             }
+        }
 
+        // Cengage addition
+        private addToColumnOffsets(initialOffset: number, columns: Column[]) : number {
+            var offsets = this.columnOffsets;
+            var offset = initialOffset;
+            var bodyWidth = this.gridPanel.getBodyViewport().offsetWidth;
+            for (var i = 0; i < columns.length; i++) {
+                offsets.push(offset);
+                var width = columns[i].actualWidth;
+                var widthStr = width + "";
+                if (widthStr.indexOf("%") > 0) {
+                    var percent = Number(widthStr.substring(0, widthStr.indexOf("%")));
+                    width = Math.floor(bodyWidth * percent / 100);
+                }
+                offset += width;
+            }
+
+            return offset;
         }
 
         // called from api
