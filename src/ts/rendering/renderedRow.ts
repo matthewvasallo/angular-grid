@@ -119,9 +119,9 @@ module ag.grid {
 
             // if showing scrolls, position on the container
             if (!this.gridOptionsWrapper.isForPrint()) {
-                this.vBodyRow.style.top = (this.gridOptionsWrapper.getRowHeight() * this.rowIndex) + "px";
+                this.setElementPosition(this.vBodyRow);
                 if (this.pinning) {
-                    this.vPinnedRow.style.top = (this.gridOptionsWrapper.getRowHeight() * this.rowIndex) + "px";
+                    this.setElementPosition(this.vPinnedRow);
                 }
             }
             this.vBodyRow.style.height = (this.gridOptionsWrapper.getRowHeight()) + "px";
@@ -150,6 +150,10 @@ module ag.grid {
             if (this.pinning) {
                 this.ePinnedContainer.appendChild(this.vPinnedRow.getElement());
             }
+        }
+
+        private setElementPosition(element: any) {
+            this.rowRenderer.setRowPosition(element, this.rowIndex);
         }
 
         public onRowSelected(selected: boolean): void {

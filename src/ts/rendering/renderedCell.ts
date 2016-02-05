@@ -27,6 +27,7 @@ module ag.grid {
         private node: RowNode;
         private rowIndex: number;
         private editingCell: boolean;
+        private editCell: any;
 
         private scope: any;
         private isFirstColumn: boolean = false;
@@ -171,13 +172,30 @@ module ag.grid {
             }
         }
 
+        private makeEditCell() : any {
+            var editLayer = this.rowRenderer.getEditLayer();
+            this.rowRenderer.setRowPosition(editLayer, this.rowIndex);
+
+            var div = document.createElement("div");
+            var style : any = div.style;
+            style.position = "absolute";
+            style.top = "0px";
+
+            var columnIndex = this.columnController.getDisplayedColIndex(this.column);
+            style.left = Utils.addPxIfNumber(this.columnController.getOffsetForColumnIndex(columnIndex));
+
+            editLayer.appendChild(div);
+            this.editCell = div;
+
+            return div;
+        }
+
         // called by rowRenderer when user navigates via tab key
         public startEditing(key?: number) {
             var that = this;
             this.editingCell = true;
             this.rowRenderer.setEditInProgress(true);
             this.cellEnterExitHandler(true);
-            _.removeAllChildren(this.vGridCell.getElement());
             var eInput : any, nodeToAppend : any;
 
             if (this.column.colDef.editCellRenderer) {
@@ -198,7 +216,7 @@ module ag.grid {
                 nodeToAppend = eInput;
             }
 
-            this.vGridCell.appendChild(nodeToAppend);
+            this.makeEditCell().appendChild(nodeToAppend);
 
             var blurListener = function () {
                 var params = {
@@ -291,9 +309,16 @@ module ag.grid {
                 this.eventService.dispatchEvent(Events.EVENT_CELL_VALUE_CHANGED, paramsForCallbacks);
             }
 
-            _.removeAllChildren(this.vGridCell.getElement());
             if (this.checkboxSelection) {
                 this.vGridCell.appendChild(this.vCellWrapper.getElement());
+            }
+
+            if (this.editCell) {
+                _.removeAllChildren(this.editCell);
+                var editLayer = this.rowRenderer.getEditLayer();
+                editLayer.removeChild(this.editCell);
+                this.rowRenderer.setRowPosition(editLayer, -10);
+                this.editCell = null;
             }
             this.refreshCell();
 

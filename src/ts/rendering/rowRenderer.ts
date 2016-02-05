@@ -48,6 +48,7 @@ module ag.grid {
         private eFloatingBottomPinnedContainer: HTMLElement;
         private eParentsOfRows: HTMLElement[];
         private widthHolderDiv: HTMLElement;
+        private editLayerDiv: HTMLElement;
         private cellToBeEdited: any;
         private editInProgress: boolean;
 
@@ -134,20 +135,39 @@ module ag.grid {
             this.addWidthHolderDiv();
         }
 
-        // Cengage addition
-        private addWidthHolderDiv(): any {
+        // Cengage additions
+        private makeUtilityDiv() : any {
+            var div = document.createElement("div");
+            div.innerHTML = "&nbsp;";
+            div.style.position = "absolute";
+            this.eBodyContainer.appendChild(div);
+
+            return div;
+        }
+
+        private addWidthHolderDiv(): void {
             // when all rows are deleted during scrolling, the container was collapsing to 0 width,
             // and losing the scroll position.
             // so we add an empty div off screen, with the desired width, and the position is preserved.
-            var div = document.createElement("div");
-            div.innerHTML = "&nbsp;";
-
-            div.style.position = "absolute";
+            var div = this.makeUtilityDiv();
             div.style.top = "-100px";
             // width will be set dynamically
-            this.eBodyContainer.appendChild(div);
 
             this.widthHolderDiv = div;
+        }
+
+        public getEditLayer() : any {
+            if (! this.editLayerDiv) {
+                var div = this.makeUtilityDiv();
+                (<any> div.style)["z-index"] = 100;
+                this.editLayerDiv = div;
+            }
+
+            return this.editLayerDiv;
+        }
+
+        public setRowPosition(element: any, rowIndex: number): void {
+            element.style.top = (this.gridOptionsWrapper.getRowHeight() * rowIndex) + "px";
         }
 
         public refreshAllFloatingRows(): void {
