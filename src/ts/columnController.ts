@@ -523,8 +523,19 @@ module ag.grid {
         }
 
         // Cengage addition
-        public getOffsetForColumnIndex(colIndex: any) : any {
+        public getOffsetForColumnIndex(colIndex: any) : number {
             return this.columnOffsets[colIndex];
+        }
+
+        public getOffsetForColDef(colDef: any) : number {
+            var columns = this.displayedColumns;
+            for (var i=0; i < columns.length; i++) {
+                if (columns[i].colDef === colDef) {
+                    return this.getOffsetForColumnIndex(i);
+                }
+            }
+
+            return 0;
         }
 
         public getColumnForOffset(offset: number) : number {
