@@ -664,8 +664,10 @@ module ag.grid {
 
                 var renderedCell: RenderedCell = this.getCellAtRowColumn(position['y'].current, position['x'].current, true);
                 if (renderedCell) {
-                    renderedCell.startEditing();
-                    done = true;
+                    if (renderedCell.isCellEditable() || !params.editable) {
+                        renderedCell.startEditing();
+                        done = true;
+                    }
                 } else {
                     // note position to edit when rendered
                     this.cellToBeEdited = {
