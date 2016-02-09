@@ -110,6 +110,9 @@ module ag.grid {
 
                 var eInnerText = document.createElement("span");
                 eInnerText.className = 'ag-header-group-text';
+                if (this.gridOptionsWrapper.getGroupTitleProperty()) {
+                    eInnerText.setAttribute(this.gridOptionsWrapper.getGroupTitleProperty(), groupName);
+                }
                 eInnerText.innerHTML = groupName;
                 eGroupCellLabel.appendChild(eInnerText);
 

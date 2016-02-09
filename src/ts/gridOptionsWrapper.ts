@@ -133,6 +133,7 @@ module ag.grid {
         public getLeafNodeIndent() { return this.gridOptions.leafNodeIndent; }
         public getCellsToRenderPerPass() {return this.gridOptions.cellsToRenderPerPass || 50; }
         public getBufferLevels() { return this.gridOptions.bufferLevels; }
+        public getGroupTitleProperty() {return this.gridOptions.groupTitleProperty; }
 
         // properties
         public getHeaderHeight(): number {
