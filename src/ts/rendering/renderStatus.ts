@@ -50,12 +50,6 @@ module ag.grid {
 
         public getAreaToRender() : any {
             if (this.areaToRender === null) {
-                this.areaToRender = {
-                    top: 0,
-                    left: 0,
-                    bottom: 0,
-                    right: 0
-                };
                 this.computeAreaToRender();
             }
             return this.areaToRender;
@@ -121,6 +115,15 @@ module ag.grid {
                 if (last > rowCount - 1) {
                     last = rowCount - 1;
                 }
+            }
+
+            if (this.areaToRender === null) {
+                this.areaToRender = {
+                    top: 0,
+                    left: 0,
+                    bottom: 0,
+                    right: 0
+                };
             }
 
             this.areaToRender.top = first;
