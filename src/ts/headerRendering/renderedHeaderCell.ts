@@ -114,6 +114,19 @@ module ag.grid {
         private addSortIcons(headerCellLabel: HTMLElement): void {
             var addSortIcons = this.gridOptionsWrapper.isEnableSorting() && !this.column.colDef.suppressSorting;
             if (!addSortIcons) {
+                var colDef = this.column.colDef;
+                if (colDef.headerClickHandler) {
+                    var params = {
+                        event: <any> null,
+                        colDef: colDef,
+                        context: this.gridOptionsWrapper.getContext(),
+                        api: this.gridOptionsWrapper.getApi()
+                    };
+                    headerCellLabel.addEventListener("click", function(e) {
+                        params.event = e;
+                        colDef.headerClickHandler(params);
+                    });
+                }
                 return;
             }
 

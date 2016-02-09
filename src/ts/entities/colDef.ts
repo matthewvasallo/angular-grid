@@ -133,5 +133,6 @@ module ag.grid {
         cellHoverHandler?: Function;
         headerHoverHandler?: Function;
         editWidth?: number;
+        headerClickHandler?: Function;
     }
 }
