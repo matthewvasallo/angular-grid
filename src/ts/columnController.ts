@@ -593,7 +593,7 @@ module ag.grid {
             this.updateDisplayedColumns();
         }
 
-        private updateDisplayedColumns() {
+        public updateDisplayedColumns() {
             this.columnOffsets = [];
 
             if (!this.gridOptionsWrapper.isGroupHeaders()) {
