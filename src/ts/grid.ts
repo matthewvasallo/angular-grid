@@ -678,6 +678,7 @@ module ag.grid {
             // both of the two below should be done in gridPanel, the gridPanel should register 'resize' to the panel
             if (sizeChanged) {
                 this.columnController.updateDisplayedColumns();
+                this.headerRenderer.refreshHeader();
                 this.rowRenderer.drawAfterScroll();
             }
         }
