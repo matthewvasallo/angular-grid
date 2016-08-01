@@ -624,16 +624,25 @@ module ag.grid {
             var bodyWidth = this.gridPanel.getBodyViewport().offsetWidth;
             for (var i = 0; i < columns.length; i++) {
                 offsets.push(offset);
-                var width = columns[i].actualWidth;
-                var widthStr = width + "";
-                if (widthStr.indexOf("%") > 0) {
-                    var percent = Number(widthStr.substring(0, widthStr.indexOf("%")));
-                    width = Math.floor(bodyWidth * percent / 100);
-                }
-                offset += width;
+                var width = this.convertIfPercent(columns[i].colDef.width, bodyWidth);
+                columns[i].actualWidth = width;
+                offset += this.convertIfPercent(width, bodyWidth);
             }
 
             return offset;
+        }
+
+        private convertIfPercent(width: any, bodyWidth?: any): number {
+            if (!bodyWidth) {
+                bodyWidth = this.gridPanel.getBodyViewport().offsetWidth;
+            }
+            var widthStr = width + "";
+            if (widthStr.indexOf("%") > 0) {
+                var percent = Number(widthStr.substring(0, widthStr.indexOf("%")));
+                width = Math.floor(bodyWidth * percent / 100);
+            }
+
+            return width;
         }
 
         // called from api
@@ -867,12 +876,14 @@ module ag.grid {
             if (!colDef.width) {
                 // if no width defined in colDef, use default
                 return this.gridOptionsWrapper.getColWidth();
-            } else if (colDef.width < constants.MIN_COL_WIDTH) {
+            }
+            var width = this.convertIfPercent(colDef.width);
+            if (width < constants.MIN_COL_WIDTH) {
                 // if width in col def to small, set to min width
                 return constants.MIN_COL_WIDTH;
             } else {
                 // otherwise use the provided width
-                return colDef.width;
+                return width;
             }
         }
 
