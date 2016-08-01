@@ -44,6 +44,9 @@ module ag.grid {
         public static EVENT_ROW_CLICKED = 'rowClicked';
         public static EVENT_ROW_DOUBLE_CLICKED = 'rowDoubleClicked';
         public static EVENT_READY = 'ready';
+
+        // Cengage additions
+        public static EVENT_VIRTUAL_ROWS_ADDED = 'virtualRowsAdded';
     }
 
 }

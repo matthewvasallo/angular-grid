@@ -390,5 +390,38 @@ module ag.grid {
         public destroy(): void {
             this.grid.destroy();
         }
+
+        // Cengage additions
+        public getBodyScrollLeft(): any {
+            return this.gridPanel.getBodyViewport().scrollLeft;
+        }
+
+        public setBodyScrollLeft(leftPos: any) {
+            this.gridPanel.getBodyViewport().scrollLeft = leftPos;
+        }
+
+        public editCellAtRowColumn(rowIndex: any, colIndex: any): boolean {
+            return this.rowRenderer.editCellAtRowColumn(rowIndex, colIndex);
+        }
+
+        private getMappedRow(rowIndex: any) : RowNode {
+            var model = this.grid.getRowModel();
+            var mappedIndex = model.getMappedIndexFromOriginal(rowIndex);
+            return model.getVirtualRow(mappedIndex);
+        }
+
+        public refreshRowByIndex(rowIndex: any) {
+            var row = this.getMappedRow(rowIndex);
+            if (row) {
+                this.refreshRows([row]);
+            }
+        }
+
+        public refreshCellByIndexAndId(rowIndex: any, colId: any) {
+            var row = this.getMappedRow(rowIndex);
+            if (row) {
+                this.refreshCells([row], [colId]);
+            }
+        }
     }
 }

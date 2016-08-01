@@ -48,13 +48,13 @@ module ag.grid {
                 if (params.colDef && params.colDef.cellRenderer && params.colDef.cellRenderer.padding >= 0) {
                     paddingFactor = params.colDef.cellRenderer.padding;
                 } else {
-                    paddingFactor = 10;
+                    paddingFactor = gridOptionsWrapper.getGroupIndentPerLevel() || 10;
                 }
                 var paddingPx = node.level * paddingFactor;
                 if (node.footer) {
                     paddingPx += 10;
                 } else if (!node.group) {
-                    paddingPx += 5;
+                    paddingPx += gridOptionsWrapper.getLeafNodeIndent() || 5;
                 }
                 eGroupCell.style.paddingLeft = paddingPx + 'px';
             }

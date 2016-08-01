@@ -185,7 +185,7 @@ module ag.grid {
                 columnController, popupService, valueService);
             selectionRendererFactory.init(this, selectionController);
             columnController.init(this, selectionRendererFactory, gridOptionsWrapper,
-                expressionService, valueService, masterSlaveService, eventService);
+                expressionService, valueService, masterSlaveService, eventService, gridPanel);
             rowRenderer.init(columnController, gridOptionsWrapper, gridPanel, this, selectionRendererFactory, $compile,
                 $scope, selectionController, expressionService, templateService, valueService, eventService);
             headerRenderer.init(gridOptionsWrapper, columnController, gridPanel, this, filterManager,
@@ -481,6 +481,7 @@ module ag.grid {
         // remain.
         public updateModelAndRefresh(step: any, refreshFromIndex?: any) {
             this.inMemoryRowController.updateModel(step);
+            this.rowRenderer.resetRenderRegion();
             this.rowRenderer.refreshView(refreshFromIndex);
         }
 
@@ -676,7 +677,9 @@ module ag.grid {
             var sizeChanged = this.eRootPanel.doLayout();
             // both of the two below should be done in gridPanel, the gridPanel should register 'resize' to the panel
             if (sizeChanged) {
-                this.rowRenderer.drawVirtualRows();
+                this.columnController.updateDisplayedColumns();
+                this.headerRenderer.refreshHeader();
+                this.rowRenderer.drawAfterScroll();
             }
         }
     }

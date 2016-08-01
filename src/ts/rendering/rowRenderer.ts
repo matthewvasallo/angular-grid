@@ -1,6 +1,8 @@
 /// <reference path="../utils.ts" />
 /// <reference path="../constants.ts" />
 /// <reference path="renderedRow.ts" />
+/// <reference path="renderStatus.ts" />
+/// <reference path="asyncRenderer.ts" />
 /// <reference path="../cellRenderers/groupCellRendererFactory.ts" />
 
 module ag.grid {
@@ -9,7 +11,7 @@ module ag.grid {
 
     export class RowRenderer {
 
-        private columnModel: any;
+        private columnModel: ColumnController;
         private gridOptionsWrapper: GridOptionsWrapper;
         private angularGrid: Grid;
         private selectionRendererFactory: SelectionRendererFactory;
@@ -31,6 +33,9 @@ module ag.grid {
         private renderedTopFloatingRows: RenderedRow[] = [];
         private renderedBottomFloatingRows: RenderedRow[] = [];
 
+        private renderStatus: RenderStatus;
+        private asyncRenderer: AsyncRenderer;
+
         private eAllBodyContainers: HTMLElement[];
         private eAllPinnedContainers: HTMLElement[];
 
@@ -42,8 +47,12 @@ module ag.grid {
         private eFloatingBottomContainer: HTMLElement;
         private eFloatingBottomPinnedContainer: HTMLElement;
         private eParentsOfRows: HTMLElement[];
+        private widthHolderDiv: HTMLElement;
+        private editLayerDiv: HTMLElement;
+        private cellToBeEdited: any;
+        private editInProgress: boolean;
 
-        public init(columnModel: any, gridOptionsWrapper: GridOptionsWrapper, gridPanel: GridPanel,
+        public init(columnModel: ColumnController, gridOptionsWrapper: GridOptionsWrapper, gridPanel: GridPanel,
                     angularGrid: Grid, selectionRendererFactory: SelectionRendererFactory, $compile: any, $scope: any,
                     selectionController: SelectionController, expressionService: ExpressionService,
                     templateService: TemplateService, valueService: ValueService, eventService: EventService) {
@@ -71,10 +80,15 @@ module ag.grid {
             // map of row ids to row objects. keeps track of which elements
             // are rendered for which rows in the dom.
             this.renderedRows = {};
+
+            // Cengage addition
+            this.renderStatus = new RenderStatus(gridOptionsWrapper, gridPanel, this, columnModel, this.eBodyViewport);
+            this.asyncRenderer = new AsyncRenderer(gridOptionsWrapper, this, this.renderStatus, eventService);
         }
 
         public setRowModel(rowModel: any) {
             this.rowModel = rowModel;
+            this.renderStatus.setRowModel(rowModel);
         }
 
         public onIndividualColumnResized(column: Column) {
@@ -117,6 +131,43 @@ module ag.grid {
                 this.eFloatingTopContainer];
             this.eAllPinnedContainers = [this.ePinnedColsContainer, this.eFloatingBottomPinnedContainer,
                 this.eFloatingTopPinnedContainer];
+
+            this.addWidthHolderDiv();
+        }
+
+        // Cengage additions
+        private makeUtilityDiv() : any {
+            var div = document.createElement("div");
+            div.innerHTML = "&nbsp;";
+            div.style.position = "absolute";
+            this.eBodyContainer.appendChild(div);
+
+            return div;
+        }
+
+        private addWidthHolderDiv(): void {
+            // when all rows are deleted during scrolling, the container was collapsing to 0 width,
+            // and losing the scroll position.
+            // so we add an empty div off screen, with the desired width, and the position is preserved.
+            var div = this.makeUtilityDiv();
+            div.style.top = "-100px";
+            // width will be set dynamically
+
+            this.widthHolderDiv = div;
+        }
+
+        public getEditLayer() : any {
+            if (! this.editLayerDiv) {
+                var div = this.makeUtilityDiv();
+                (<any> div.style)["z-index"] = 100;
+                this.editLayerDiv = div;
+            }
+
+            return this.editLayerDiv;
+        }
+
+        public setRowPosition(element: any, rowIndex: number): void {
+            element.style.top = (this.gridOptionsWrapper.getRowHeight() * rowIndex) + "px";
         }
 
         public refreshAllFloatingRows(): void {
@@ -194,17 +245,19 @@ module ag.grid {
             }
             // we only need to be worried about rendered rows, as this method is
             // called to whats rendered. if the row isn't rendered, we don't care
-            var indexesToRemove: any = [];
+            //var indexesToRemove: any = [];
+            var redrawNeeded = false;
             _.iterateObject(this.renderedRows, (key: string, renderedRow: RenderedRow)=> {
                 var rowNode = renderedRow.getRowNode();
                 if (rowNodes.indexOf(rowNode)>=0) {
-                    indexesToRemove.push(key);
+                    renderedRow.markForRefresh();
+                    redrawNeeded = true;
                 }
             });
-            // remove the rows
-            this.removeVirtualRow(indexesToRemove);
-            // add draw them again
-            this.drawVirtualRows();
+
+            if (redrawNeeded) {
+                this.asyncRenderer.startIfNeeded();
+            }
         }
 
         public refreshCells(rowNodes: RowNode[], colIds: string[]): void {
@@ -240,6 +293,9 @@ module ag.grid {
         }
 
         private refreshAllVirtualRows(fromIndex: any) {
+            // make sure the dummy div spans the entire width, so that scroll position is maintained.
+            this.widthHolderDiv.style.width = this.columnModel.getBodyContainerWidth() + "px";
+
             // remove all current virtual rows, as they have old data
             var rowsToRemove = Object.keys(this.renderedRows);
             this.removeVirtualRow(rowsToRemove, fromIndex);
@@ -294,37 +350,8 @@ module ag.grid {
         }
 
         public drawVirtualRows() {
-            var first: any;
-            var last: any;
-
-            var rowCount = this.rowModel.getVirtualRowCount();
-
-            if (this.gridOptionsWrapper.isForPrint()) {
-                first = 0;
-                last = rowCount;
-            } else {
-                var topPixel = this.eBodyViewport.scrollTop;
-                var bottomPixel = topPixel + this.eBodyViewport.offsetHeight;
-
-                first = Math.floor(topPixel / this.gridOptionsWrapper.getRowHeight());
-                last = Math.floor(bottomPixel / this.gridOptionsWrapper.getRowHeight());
-
-                //add in buffer
-                var buffer = this.gridOptionsWrapper.getRowBuffer();
-                first = first - buffer;
-                last = last + buffer;
-
-                // adjust, in case buffer extended actual size
-                if (first < 0) {
-                    first = 0;
-                }
-                if (last > rowCount - 1) {
-                    last = rowCount - 1;
-                }
-            }
-
-            this.firstVirtualRenderedRow = first;
-            this.lastVirtualRenderedRow = last;
+            this.firstVirtualRenderedRow = this.renderStatus.getFirstRowToRetain();
+            this.lastVirtualRenderedRow = this.renderStatus.getLastRowToRetain();
 
             this.ensureRowsRendered();
         }
@@ -343,6 +370,7 @@ module ag.grid {
 
             var mainRowWidth = this.columnModel.getBodyContainerWidth();
             var that = this;
+            var rowsNeeded = false;
 
             // at the end, this array will contain the items we need to remove
             var rowsToRemove = Object.keys(this.renderedRows);
@@ -357,20 +385,24 @@ module ag.grid {
                 // check this row actually exists (in case overflow buffer window exceeds real data)
                 var node = this.rowModel.getVirtualRow(rowIndex);
                 if (node) {
-                    that.insertRow(node, rowIndex, mainRowWidth);
+                    rowsNeeded = true;
                 }
             }
 
             // at this point, everything in our 'rowsToRemove' . . .
             this.removeVirtualRow(rowsToRemove);
 
-            // if we are doing angular compiling, then do digest the scope here
-            if (this.gridOptionsWrapper.isAngularCompileRows()) {
-                // we do it in a timeout, in case we are already in an apply
-                setTimeout(function () {
-                    that.$scope.$apply();
-                }, 0);
+            if (rowsNeeded) {
+                // make sure async rendering is running
+                this.asyncRenderer.startIfNeeded();
             }
+            // if we are doing angular compiling, then do digest the scope here
+            //if (this.gridOptionsWrapper.isAngularCompileRows()) {
+                // we do it in a timeout, in case we are already in an apply
+                //setTimeout(function () {
+                //    that.$scope.$apply();
+                //}, 0);
+            //}
 
             //var end = new Date().getTime();
             //console.log(end-start);
@@ -390,6 +422,44 @@ module ag.grid {
             renderedRow.setMainRowWidth(mainRowWidth);
 
             this.renderedRows[rowIndex] = renderedRow;
+
+            if (this.cellToBeEdited && this.cellToBeEdited.rowIndex === rowIndex) {
+                renderedRow.noteColumnToEdit(this.cellToBeEdited.column);
+                this.cellToBeEdited = null;
+            }
+        }
+
+        // Cengage additions
+        public addRow(rowIndex: number) : RenderedRow {
+            var node = this.rowModel.getVirtualRow(rowIndex);
+            this.insertRow(node, rowIndex, this.columnModel.getBodyContainerWidth());
+
+            return this.renderedRows[rowIndex];
+        }
+
+        public getRenderedRows() : {[key: string]: RenderedRow} {
+            return this.renderedRows;
+        }
+
+        public drawAfterScroll() {
+            // remove any rows we don't want anymore
+            this.drawVirtualRows();
+            // if there was horizontal motion, make sure rendering is in progress to notice it.
+            this.asyncRenderer.startIfNeeded();
+        }
+
+        public resetRenderRegion() {
+            this.renderStatus.resetLevel();
+        }
+
+        public doAngularAppy() {
+            if (this.gridOptionsWrapper.isAngularCompileRows()) {
+                // we do it in a timeout, in case we are already in an apply
+                var that = this;
+                setTimeout(function () {
+                    that.$scope.$apply();
+                }, 0);
+            }
         }
 
         public getRenderedNodes() {
@@ -533,58 +603,117 @@ module ag.grid {
             }
         }
 
-        // called by the cell, when tab is pressed while editing
-        public startEditingNextCell(rowIndex: any, column: any, shiftKey: any) {
+        // Cengage addition
+        public editCellAtRowColumn(rowIndex: any, colIndex: any): boolean {
+            var renderedCell: RenderedCell = this.getCellAtRowColumn(rowIndex, colIndex);
+            if (renderedCell && renderedCell.isCellEditable()) {
+                renderedCell.startEditing();
+                return true;
+            }
 
-            var firstRowToCheck = this.firstVirtualRenderedRow;
-            var lastRowToCheck = this.lastVirtualRenderedRow;
-            var currentRowIndex = rowIndex;
+            return false;
+        }
 
+        private getCellAtRowColumn(rowIndex: any, colIndex: any, display: boolean = false) : RenderedCell {
+            var renderedRow: RenderedRow = this.renderedRows[rowIndex];
+            var columns : Column[] = display ? this.columnModel.getDisplayedColumns() : this.columnModel.getAllColumns();
+            var column : Column = columns[colIndex];
+            if (renderedRow && column) {
+                return renderedRow.getRenderedCellForColumn(column);
+            }
+
+            return null;
+        }
+
+        public getGridPanel() : GridPanel {
+            return this.gridPanel;
+        }
+
+        public selectNextEditCellByParameters(rowIndex: any, column: any, params: any) {
             var visibleColumns = this.columnModel.getDisplayedColumns();
             var currentCol = column;
+            var currentColIndex = visibleColumns.indexOf(currentCol);
 
-            while (true) {
+            var dx = params.deltaX;
+            var dy = params.deltaY;
 
-                var indexOfCurrentCol = visibleColumns.indexOf(currentCol);
+            var position : {[key: string] : any} = {
+                x: {
+                    current: currentColIndex,
+                    min: 0,
+                    max: visibleColumns.length - 1
+                },
+                y: {
+                    current: rowIndex,
+                    min: 0,
+                    max: this.rowModel.getVirtualRowCount() - 1
+                }
+            };
 
-                // move backward
-                if (shiftKey) {
-                    // move along to the previous cell
-                    currentCol = visibleColumns[indexOfCurrentCol - 1];
-                    // check if end of the row, and if so, go back a row
-                    if (!currentCol) {
-                        currentCol = visibleColumns[visibleColumns.length - 1];
-                        currentRowIndex--;
-                    }
+            var done = false;
+            while (!done) {
 
-                    // if got to end of rendered rows, then quit looking
-                    if (currentRowIndex < firstRowToCheck) {
-                        return;
-                    }
-                    // move forward
-                } else {
-                    // move along to the next cell
-                    currentCol = visibleColumns[indexOfCurrentCol + 1];
-                    // check if end of the row, and if so, go forward a row
-                    if (!currentCol) {
-                        currentCol = visibleColumns[0];
-                        currentRowIndex++;
-                    }
+                adjustPosition("x", dx);
+                adjustPosition("y", dy);
 
-                    // if got to end of rendered rows, then quit looking
-                    if (currentRowIndex > lastRowToCheck) {
-                        return;
-                    }
+                currentCol = visibleColumns[position['x'].current];
+
+                if (params.skipPinned && currentCol.pinned) {
+                    continue;
                 }
 
-                var nextRenderedRow: RenderedRow = this.renderedRows[currentRowIndex];
-                var nextRenderedCell: RenderedCell = nextRenderedRow.getRenderedCellForColumn(currentCol);
-                if (nextRenderedCell.isCellEditable()) {
-                    nextRenderedCell.startEditing();
-                    nextRenderedCell.focusCell(false);
-                    return;
+                var renderedCell: RenderedCell = this.getCellAtRowColumn(position['y'].current, position['x'].current, true);
+                if (renderedCell) {
+                    if (renderedCell.isCellEditable() || !params.editable) {
+                        renderedCell.startEditing();
+                        done = true;
+                    }
+                } else {
+                    // note position to edit when rendered
+                    this.cellToBeEdited = {
+                        rowIndex: position['y'].current,
+                        column: currentCol
+                    };
+                    this.gridPanel.ensureIndexVisible(position['y'].current);
+                    var renderedRow : RenderedRow = this.renderedRows[this.cellToBeEdited.rowIndex];
+                    if (renderedRow) {
+                        renderedRow.noteColumnToEdit(this.cellToBeEdited.column);
+                    }
+                    this.gridPanel.ensureColIndexVisible(this.columnModel.getDisplayedColIndex(currentCol));
+                    done = true;
                 }
             }
+
+            function adjustPosition(which: string, delta: any, advanceOK = true) {
+                if (! delta) {
+                    return;
+                }
+
+                var coordinate : any = position[which];
+                var other : string = which === "x" ? "y" : "x";
+                var advanceAtEnd : boolean = advanceOK && params.advanceAtEnd && (<any>position[other].max) > (<any>position[other].min);
+
+                coordinate.current += delta;
+                if (coordinate.current < coordinate.min) {
+                    coordinate.current = coordinate.max;
+                    if (advanceAtEnd) {
+                        adjustPosition(other, -1, false);
+                    }
+                } else if (coordinate.current > coordinate.max) {
+                    coordinate.current = coordinate.min;
+                    if (advanceAtEnd) {
+                        adjustPosition(other, 1, false);
+                    }
+                }
+            }
+        }
+
+        public isEditInProgress() : boolean {
+            return this.editInProgress;
+        }
+
+        public setEditInProgress(newValue: boolean) {
+            this.editInProgress = newValue;
         }
     }
 }

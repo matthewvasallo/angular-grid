@@ -5,6 +5,34 @@ module ag.grid {
     var DEFAULT_ROW_HEIGHT = 25;
     var constants = Constants;
 
+    var defaultEditKeyMap = [{
+        // Tab key
+        9: {
+            noShift: {
+                editable: true,
+                deltaX: 1,
+                advanceAtEnd: true
+            },
+            shift: {
+                editable: true,
+                deltaX: -1,
+                advanceAtEnd: true
+            }
+        },
+        // ESCAPE key
+        27: {
+            noShift: {
+                abortEdit: true
+            }
+        },
+        // ENTER key
+        13: {
+            noShift: {
+                endEdit: true
+            }
+        }
+    }];
+
     function isTrue(value: any) {
         return value === true || value === 'true';
     }
@@ -99,6 +127,13 @@ module ag.grid {
         public getRowHeight() { return this.rowHeight; }
         public getOverlayLoadingTemplate() { return this.gridOptions.overlayLoadingTemplate; }
         public getOverlayNoRowsTemplate() { return this.gridOptions.overlayNoRowsTemplate; }
+        // Cengage additions
+        public getEditKeyMap() { return this.gridOptions.editKeyMap || defaultEditKeyMap; }
+        public getGroupIndentPerLevel() { return this.gridOptions.groupIndentPerLevel; }
+        public getLeafNodeIndent() { return this.gridOptions.leafNodeIndent; }
+        public getCellsToRenderPerPass() {return this.gridOptions.cellsToRenderPerPass || 50; }
+        public getBufferLevels() { return this.gridOptions.bufferLevels; }
+        public getGroupTitleProperty() {return this.gridOptions.groupTitleProperty; }
 
         // properties
         public getHeaderHeight(): number {

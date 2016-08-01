@@ -27,6 +27,7 @@ module ag.grid {
         private node: RowNode;
         private rowIndex: number;
         private editingCell: boolean;
+        private editCell: any;
 
         private scope: any;
         private isFirstColumn: boolean = false;
@@ -127,12 +128,13 @@ module ag.grid {
             this.addCellClickedHandler();
             this.addCellDoubleClickedHandler();
             this.addCellContextMenuHandler();
+            this.addCellHoverHandler();
 
             if (!this.node.floating) { // not allowing navigation on the floating until i have time to figure it out
                 this.addCellNavigationHandler();
             }
 
-            this.vGridCell.addStyles({width: this.column.actualWidth + "px"});
+            this.vGridCell.addStyles({width:  Utils.addPxIfNumber(this.column.actualWidth)});
 
             this.createParentOfValue();
 
@@ -144,88 +146,152 @@ module ag.grid {
 
         }
 
+        // Cengage addition
+        public useEditCellRenderer(container: any) : void {
+            var colDef : ColDef = this.column.colDef;
+            var rendererParams = {
+                value: this.getValue(),
+                data: this.data,
+                node: this.node,
+                colDef: colDef,
+                column: this.column,
+                $scope: this.scope,
+                rowIndex: this.rowIndex,
+                api: this.gridOptionsWrapper.getApi(),
+                context: this.gridOptionsWrapper.getContext()
+            };
+
+            var editRenderer = colDef.editCellRenderer;
+            var resultFromRenderer = editRenderer(rendererParams);
+
+            //return resultFromRenderer;
+            if (Utils.isNodeOrElement(resultFromRenderer)) {
+                container.appendChild(resultFromRenderer)
+            } else {
+                container.innerHTML = resultFromRenderer;
+            }
+        }
+
+        private makeEditCell() : any {
+            var editLayer = this.rowRenderer.getEditLayer();
+            this.rowRenderer.setRowPosition(editLayer, this.rowIndex);
+
+            var div = document.createElement("div");
+            var style : any = div.style;
+            style.position = "absolute";
+            style.top = "0px";
+
+            var columnIndex = this.columnController.getDisplayedColIndex(this.column);
+            style.left = Utils.addPxIfNumber(this.columnController.getOffsetForColumnIndex(columnIndex));
+
+            editLayer.appendChild(div);
+            this.editCell = div;
+
+            return div;
+        }
+
         // called by rowRenderer when user navigates via tab key
         public startEditing(key?: number) {
             var that = this;
             this.editingCell = true;
-            _.removeAllChildren(this.vGridCell.getElement());
-            var eInput = document.createElement('input');
-            eInput.type = 'text';
-            _.addCssClass(eInput, 'ag-cell-edit-input');
+            this.rowRenderer.setEditInProgress(true);
+            this.cellEnterExitHandler(true);
+            var eInput : any, nodeToAppend : any;
 
-            var startWithOldValue = key !== Constants.KEY_BACKSPACE && key !== Constants.KEY_DELETE;
-            var value = this.getValue();
-            if (startWithOldValue && value !== null && value !== undefined) {
-                eInput.value = value;
+            if (this.column.colDef.editCellRenderer) {
+                nodeToAppend = document.createElement('span');
+                this.useEditCellRenderer(nodeToAppend);
+                eInput = nodeToAppend.querySelector('input');
+            } else {
+                eInput = document.createElement('input');
+                eInput.type = 'text';
+                _.addCssClass(eInput, 'ag-cell-edit-input');
+                var startWithOldValue = key !== Constants.KEY_BACKSPACE && key !== Constants.KEY_DELETE;
+                var value = this.getValue();
+                if (startWithOldValue && value !== null && value !== undefined) {
+                    eInput.value = value;
+                }
+
+                eInput.style.width = (this.column.actualWidth - 14) + 'px';
+                nodeToAppend = eInput;
             }
 
-            eInput.style.width = (this.column.actualWidth - 14) + 'px';
-            this.vGridCell.appendChild(eInput);
-            eInput.focus();
-            eInput.select();
+            this.makeEditCell().appendChild(nodeToAppend);
 
             var blurListener = function () {
-                that.stopEditing(eInput, blurListener);
+                var params = {
+                    abortIfInvalid: true
+                };
+                that.stopEditing(eInput, blurListener, params);
             };
 
             //stop entering if we loose focus
             eInput.addEventListener("blur", blurListener);
 
-            //stop editing if enter pressed
-            eInput.addEventListener('keypress', (event: any) => {
+            var customKeyMap = this.gridOptionsWrapper.getEditKeyMap();
+            eInput.addEventListener('keydown', function(event: any) {
                 var key = event.which || event.keyCode;
-                if (key === Constants.KEY_ENTER) {
-                    this.stopEditing(eInput, blurListener);
-                    this.focusCell(true);
-                }
-            });
+                var keyDefinition = customKeyMap[key] || Constants.DEFAULT_KEY_MAP[key];
+                if (keyDefinition) {
+                    var params = keyDefinition[event.shiftKey ? "shift" : "noShift"];
+                    if (params) {
+                        var stopped = that.stopEditing(eInput, blurListener, params);
+                        if (stopped && ! (params.abortEdit || params.endEdit)) {
+                            that.rowRenderer.selectNextEditCellByParameters(that.rowIndex, that.column, params);
+                        }
+                    }
 
-            //stop editing if enter pressed
-            eInput.addEventListener('keydown', (event: any) => {
-                var key = event.which || event.keyCode;
-                if (key === Constants.KEY_ESCAPE) {
-                    this.stopEditing(eInput, blurListener, true);
-                    this.focusCell(true);
-                }
-            });
-
-            // tab key doesn't generate keypress, so need keydown to listen for that
-            eInput.addEventListener('keydown', function (event:any) {
-                var key = event.which || event.keyCode;
-                if (key == Constants.KEY_TAB) {
-                    that.stopEditing(eInput, blurListener);
-                    that.rowRenderer.startEditingNextCell(that.rowIndex, that.column, event.shiftKey);
-                    // we don't want the default tab action, so return false, this stops the event from bubbling
+                    // we don't want the default action, so return false, this stops the event from bubbling
                     event.preventDefault();
                     return false;
                 }
             });
+
+            var colIndex = this.columnController.getDisplayedColIndex(this.column);
+            if (colIndex >= 0) {
+                this.rowRenderer.getGridPanel().ensureColIndexVisible(colIndex, this.column.colDef.editWidth);
+            }
+
+            eInput.focus();
+            eInput.select();
         }
 
         public focusCell(forceBrowserFocus: boolean): void {
             this.rowRenderer.focusCell(this.vGridCell.getElement(), this.rowIndex, this.column.index, this.column.colDef, forceBrowserFocus);
         }
 
-        private stopEditing(eInput: any, blurListener: any, reset: boolean = false) {
-            this.editingCell = false;
+        private stopEditing(eInput: any, blurListener: any, params: any): boolean {
             var newValue = eInput.value;
             var colDef = this.column.colDef;
+            var paramsForCallbacks = {
+                node: this.node,
+                data: this.node.data,
+                oldValue: this.node.data[colDef.field],
+                newValue: newValue,
+                rowIndex: this.rowIndex,
+                colDef: colDef,
+                api: this.gridOptionsWrapper.getApi(),
+                context: this.gridOptionsWrapper.getContext()
+            };
+
+            if (!params.abortEdit && colDef.newValueValidator) {
+                if (!colDef.newValueValidator(paramsForCallbacks)) {
+                    if (!params.abortIfInvalid) {
+                        return false;
+                    }
+                    params.abortEdit = true;
+                }
+            }
+
+            this.editingCell = false;
+            this.rowRenderer.setEditInProgress(false);
+            this.cellEnterExitHandler(false);
 
             //If we don't remove the blur listener first, we get:
             //Uncaught NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is no longer a child of this node. Perhaps it was moved in a 'blur' event handler?
             eInput.removeEventListener('blur', blurListener);
 
-            if (!reset) {
-                var paramsForCallbacks = {
-                    node: this.node,
-                    data: this.node.data,
-                    oldValue: this.node.data[colDef.field],
-                    newValue: newValue,
-                    rowIndex: this.rowIndex,
-                    colDef: colDef,
-                    api: this.gridOptionsWrapper.getApi(),
-                    context: this.gridOptionsWrapper.getContext()
-                };
+            if (!params.abortEdit) {
 
                 if (colDef.newValueHandler) {
                     colDef.newValueHandler(paramsForCallbacks);
@@ -243,11 +309,20 @@ module ag.grid {
                 this.eventService.dispatchEvent(Events.EVENT_CELL_VALUE_CHANGED, paramsForCallbacks);
             }
 
-            _.removeAllChildren(this.vGridCell.getElement());
             if (this.checkboxSelection) {
                 this.vGridCell.appendChild(this.vCellWrapper.getElement());
             }
+
+            if (this.editCell) {
+                _.removeAllChildren(this.editCell);
+                var editLayer = this.rowRenderer.getEditLayer();
+                editLayer.removeChild(this.editCell);
+                this.rowRenderer.setRowPosition(editLayer, -10);
+                this.editCell = null;
+            }
             this.refreshCell();
+
+            return true;
         }
 
         private createParams(): any {
@@ -352,6 +427,46 @@ module ag.grid {
                     that.startEditing();
                 }
             });
+        }
+
+        private cellEnterExitHandler(entering: boolean, event = {}) {
+            var colDef = this.column.colDef;
+            var hoverHandler = colDef.cellHoverHandler;
+
+            if (hoverHandler) {
+                var hoverParams = {
+                    colDef: colDef,
+                    event: event,
+                    entering: entering,
+                    leaving: !entering,
+                    rowIndex: this.rowIndex,
+                    value: this.getValue(),
+                    context: this.gridOptionsWrapper.getContext(),
+                    api: this.gridOptionsWrapper.getApi()
+                };
+                hoverHandler(hoverParams);
+            }
+        }
+
+        private addCellHoverHandler() {
+            var that = this;
+            var colDef = this.column.colDef;
+            var hoverHandler = colDef.cellHoverHandler;
+
+            if (hoverHandler) {
+                var callHandler = function(entering: boolean, event: any) {
+                    if (that.rowRenderer.isEditInProgress()) {
+                        return;
+                    }
+                    that.cellEnterExitHandler(entering, event);
+                };
+                this.vGridCell.addEventListener("mouseenter", function(e: any) {
+                    callHandler(true, e);
+                });
+                this.vGridCell.addEventListener("mouseleave", function(e: any) {
+                    callHandler(false, e);
+                });
+            }
         }
 
         private populateCell() {
@@ -572,6 +687,11 @@ module ag.grid {
         }
 
         public refreshCell() {
+            if (this.editingCell) {
+                // in our environment, a SSE might trigger a refresh while the user is editting the cell;
+                // we don't want them to get booted out of edit mode.
+                return;
+            }
 
             _.removeAllChildren(this.vParentOfValue.getElement());
             this.value = this.getValue();

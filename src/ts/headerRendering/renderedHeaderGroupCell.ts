@@ -86,6 +86,12 @@ module ag.grid {
             } else {
                 classNames.push('ag-header-group-cell-no-group');
             }
+            // Cengage addition
+            if (this.columnGroup.expandable && !this.columnGroup.expanded) {
+                classNames.push('ag-header-group-collapsed');
+            } else {
+                classNames.push('ag-header-group-expanded');
+            }
             this.eHeaderGroupCell.className = classNames.join(' ');
 
             if (this.gridOptionsWrapper.isEnableColResize()) {
@@ -104,6 +110,9 @@ module ag.grid {
 
                 var eInnerText = document.createElement("span");
                 eInnerText.className = 'ag-header-group-text';
+                if (this.gridOptionsWrapper.getGroupTitleProperty()) {
+                    eInnerText.setAttribute(this.gridOptionsWrapper.getGroupTitleProperty(), groupName);
+                }
                 eInnerText.innerHTML = groupName;
                 eGroupCellLabel.appendChild(eInnerText);
 

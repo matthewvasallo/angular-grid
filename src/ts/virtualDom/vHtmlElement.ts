@@ -175,7 +175,8 @@ module ag.vdom {
                 if (_.isNodeOrElement(child)){
                     this.element.appendChild(child);
                 } else {
-                    console.error('cannot appendChild with virtual child to already bound VHTMLElement');
+                    //console.error('cannot appendChild with virtual child to already bound VHTMLElement');
+                    this.element.appendChild((<VHtmlElement> child).bind());
                 }
             } else {
                 if (!this.children) {
@@ -229,6 +230,15 @@ module ag.vdom {
                 var childElement = element.querySelector('[v_element_id="'+child.getId()+'"]');
                 child.elementAttached(childElement);
             }
+        }
+
+        // Cengage addition
+        public bind() : Element {
+            if (!this.bound) {
+                this.elementAttached(<Element> _.loadTemplate(this.toHtmlString()));
+            }
+
+            return this.element;
         }
     }
 

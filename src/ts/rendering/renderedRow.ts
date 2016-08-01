@@ -19,9 +19,13 @@ module ag.grid {
         public vBodyRow: any;
 
         private renderedCells: {[key: number]: RenderedCell} = {};
+        private cellsToRefresh: {[key: number]: RenderedCell} = {};
         private scope: any;
         private node: any;
         private rowIndex: number;
+        private knownRenderedRange = {left: 0, right: 0};
+        private rowIsHeaderThatSpans : boolean;
+        private columnToEdit: Column;
 
         private cellRendererMap: {[key: string]: any};
 
@@ -77,6 +81,7 @@ module ag.grid {
 
             var groupHeaderTakesEntireRow = this.gridOptionsWrapper.isGroupUseEntireRow();
             var rowIsHeaderThatSpans = node.group && groupHeaderTakesEntireRow;
+            this.rowIsHeaderThatSpans = rowIsHeaderThatSpans;
 
             this.vBodyRow = this.createRowContainer();
             if (this.pinning) {
@@ -86,10 +91,6 @@ module ag.grid {
             this.rowIndex = rowIndex;
             this.node = node;
             this.scope = this.createChildScopeOrNull(node.data);
-
-            if (!rowIsHeaderThatSpans) {
-                this.drawNormalRow();
-            }
 
             this.addDynamicStyles();
             this.addDynamicClasses();
@@ -118,9 +119,9 @@ module ag.grid {
 
             // if showing scrolls, position on the container
             if (!this.gridOptionsWrapper.isForPrint()) {
-                this.vBodyRow.style.top = (this.gridOptionsWrapper.getRowHeight() * this.rowIndex) + "px";
+                this.setElementPosition(this.vBodyRow);
                 if (this.pinning) {
-                    this.vPinnedRow.style.top = (this.gridOptionsWrapper.getRowHeight() * this.rowIndex) + "px";
+                    this.setElementPosition(this.vPinnedRow);
                 }
             }
             this.vBodyRow.style.height = (this.gridOptionsWrapper.getRowHeight()) + "px";
@@ -151,6 +152,10 @@ module ag.grid {
             }
         }
 
+        private setElementPosition(element: any) {
+            this.rowRenderer.setRowPosition(element, this.rowIndex);
+        }
+
         public onRowSelected(selected: boolean): void {
             _.iterateObject(this.renderedCells, (key: any, renderedCell: RenderedCell)=> {
                 renderedCell.setSelected(selected);
@@ -163,6 +168,11 @@ module ag.grid {
                     renderedCell.refreshCell();
                 }
             });
+        }
+
+        // Cengage addition
+        public getData() : any {
+            return this.node.data;
         }
 
         public getRenderedCellForColumn(column: Column): RenderedCell {
@@ -206,34 +216,106 @@ module ag.grid {
             return this.node.group === true;
         }
 
-        private drawNormalRow() {
-            var columns = this.columnController.getDisplayedColumns();
-            for (var i = 0; i<columns.length; i++) {
-                var column = columns[i];
-                var firstCol = i === 0;
+        // Cengage additions
+        public drawPinnedAndColumnRange(left: number, right: number, maxToRender: number) : number {
+            if (this.rowIsHeaderThatSpans) {
+                return 1;
+            }
 
-                var renderedCell = new RenderedCell(firstCol, column,
-                    this.$compile, this.rowRenderer, this.gridOptionsWrapper, this.expressionService,
-                    this.selectionRendererFactory, this.selectionController, this.templateService,
-                    this.cellRendererMap, this.node, this.rowIndex, this.scope, this.columnController,
-                    this.valueService, this.eventService);
-
-                var vGridCell = renderedCell.getVGridCell();
-
-                if (column.pinned) {
-                    this.vPinnedRow.appendChild(vGridCell);
+            var renderedCount = this.drawCellRange(0, this.gridOptionsWrapper.getPinnedColCount(), maxToRender);
+            var known = this.knownRenderedRange;
+            var newCount = 1;
+            while (renderedCount < maxToRender && newCount > 0) {
+                newCount = 0;
+                if (right < known.left || left > known.right) {
+                    // discontinuous, just track the new range
+                    newCount = this.drawCellRange(left, right, maxToRender - renderedCount);
+                    known.left = left;
+                    known.right = left + newCount;
                 } else {
-                    this.vBodyRow.appendChild(vGridCell);
+                    if (left < known.left) {
+                        var start = Math.max(known.left - (maxToRender - renderedCount), left);
+                        newCount = this.drawCellRange(start, known.left, maxToRender - renderedCount);
+                        known.left = start;
+                    }
+                    if (right > known.right) {
+                        var stop = Math.min(right, known.right + (maxToRender - renderedCount - newCount));
+                        newCount += this.drawCellRange(known.right, stop, maxToRender - renderedCount - newCount);
+                        known.right = stop;
+                    }
                 }
 
-                this.renderedCells[column.index] = renderedCell;
+                renderedCount += newCount;
             }
+            this.knownRenderedRange = known;
+
+            return renderedCount;
+        }
+
+        private drawCellRange(left: number, right: number, maxToRender: number) : number {
+            var columns = this.columnController.getDisplayedColumns();
+            var renderedCount = 0;
+            var offset = -1;
+
+            for (var columnIndex = left; columnIndex < right; columnIndex++) {
+                var column = columns[columnIndex];
+
+                if (column && !this.renderedCells[column.index]) {
+                    var firstCol = columnIndex === 0;
+
+                    var renderedCell = this.cellsToRefresh[column.index];
+                    if (renderedCell) {
+                        renderedCell.refreshCell();
+                        delete this.cellsToRefresh[column.index];
+                    } else {
+                        renderedCell = new RenderedCell(firstCol, column,
+                            this.$compile, this.rowRenderer, this.gridOptionsWrapper, this.expressionService,
+                            this.selectionRendererFactory, this.selectionController, this.templateService,
+                            this.cellRendererMap, this.node, this.rowIndex, this.scope, this.columnController,
+                            this.valueService, this.eventService);
+
+                        var vGridCell = renderedCell.getVGridCell();
+
+                        if (column.pinned) {
+                            this.vPinnedRow.appendChild(vGridCell);
+                        } else {
+                            // because body cells might not be added in order, they need to be positioned
+                            vGridCell.addStyles({
+                                position: "absolute",
+                                left: Utils.addPxIfNumber(this.columnController.getOffsetForColumnIndex(columnIndex))
+                            });
+                            this.vBodyRow.appendChild(vGridCell);
+                        }
+                    }
+
+                    this.renderedCells[column.index] = renderedCell;
+
+                    if (this.columnToEdit === column && renderedCell.isCellEditable()) {
+                        renderedCell.startEditing();
+                        this.columnToEdit = null;
+                    }
+
+                    if (++renderedCount > maxToRender) {
+                        break;
+                    }
+                }
+            }
+
+            return renderedCount;
+        }
+
+        public noteColumnToEdit(column: Column) {
+            this.columnToEdit = column;
+        }
+
+        public markForRefresh() {
+            Utils.assign(this.cellsToRefresh, this.renderedCells);
+            this.knownRenderedRange = {left: 0, right: 0};
+            this.renderedCells = {};
         }
 
         private bindVirtualElement(vElement: ag.vdom.VHtmlElement): void {
-            var html = vElement.toHtmlString();
-            var element: Element = <Element> _.loadTemplate(html);
-            vElement.elementAttached(element);
+            vElement.bind();
         }
 
         private createGroupRow() {

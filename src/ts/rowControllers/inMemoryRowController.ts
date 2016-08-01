@@ -29,6 +29,8 @@ module ag.grid {
         private valueService: ValueService;
         private eventService: EventService;
 
+        private originalToMapped: any;
+
         constructor() {
             this.createModel();
         }
@@ -63,6 +65,13 @@ module ag.grid {
                 },
                 getVirtualRow: function (index: any): RowNode {
                     return that.rowsAfterMap[index];
+                },
+                getMappedIndexFromOriginal: function(index: any) : any {
+                    if (that.originalToMapped) {
+                        return that.originalToMapped[index];
+                    }
+
+                    return -1;
                 },
                 getVirtualRowCount: function (): number {
                     if (that.rowsAfterMap) {
@@ -560,6 +569,11 @@ module ag.grid {
             var rowsAfterMap = <any>[];
             this.addToMap(rowsAfterMap, this.rowsAfterSort);
             this.rowsAfterMap = rowsAfterMap;
+
+            this.originalToMapped = {};
+            for (var i=0; i < rowsAfterMap.length; i++) {
+                this.originalToMapped[rowsAfterMap[i].id] = i;
+            }
         }
 
         private addToMap(mappedData: any, originalNodes: any) {

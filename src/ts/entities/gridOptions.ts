@@ -109,6 +109,14 @@ module ag.grid {
         // apis, set by the grid on init
         api?: GridApi; // change to typed
         columnApi?: ColumnApi; // change to typed
+
+        // Cengage additions
+        editKeyMap?: any;
+        groupIndentPerLevel?: number;
+        leafNodeIndent?: number;
+        cellsToRenderPerPass?: number;
+        bufferLevels?: any;
+        groupTitleProperty: any;
     }
 
 }

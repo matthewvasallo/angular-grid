@@ -228,7 +228,7 @@ module ag.grid {
             // otherwise, row is already in view, so do nothing
         }
 
-        public ensureColIndexVisible(index: any) {
+        public ensureColIndexVisible(index: any, widthToUse = 0) {
             if (typeof index !== 'number') {
                 console.warn('col index must be a number: ' + index);
                 return;
@@ -255,7 +255,7 @@ module ag.grid {
                 colLeftPixel += columns[i].actualWidth;
             }
 
-            var colRightPixel = colLeftPixel + column.actualWidth;
+            var colRightPixel = colLeftPixel + (widthToUse || column.actualWidth);
 
             var viewportLeftPixel = this.eBodyViewport.scrollLeft;
             var viewportWidth = this.eBodyViewport.offsetWidth;
@@ -273,10 +273,12 @@ module ag.grid {
             if (viewportScrolledPastCol) {
                 // if viewport's left side is after col's left side, scroll right to pull col into viewport at left
                 this.eBodyViewport.scrollLeft = colLeftPixel;
+                this.requestDrawColumns();
             } else if (viewportScrolledBeforeCol) {
                 // if viewport's right side is before col's right side, scroll left to pull col into viewport at right
                 var newScrollPosition = colRightPixel - viewportWidth;
                 this.eBodyViewport.scrollLeft = newScrollPosition;
+                this.requestDrawColumns();
             }
             // otherwise, col is already in view, so do nothing
         }
@@ -521,6 +523,7 @@ module ag.grid {
                 if (newLeftPosition !== lastLeftPosition) {
                     lastLeftPosition = newLeftPosition;
                     this.scrollHeader(newLeftPosition);
+                    this.requestDrawColumns();
                 }
 
                 if (newTopPosition !== lastTopPosition) {
@@ -543,32 +546,11 @@ module ag.grid {
         }
 
         private requestDrawVirtualRows() {
-            // if we are in IE or Safari, then we only redraw if there was no scroll event
-            // in the 50ms following this scroll event. without this, these browsers have
-            // a bad scrolling feel, where the redraws clog the scroll experience
-            // (makes the scroll clunky and sticky). this method is like throttling
-            // the scroll events.
-            var useScrollLag: boolean;
-            // let the user override scroll lag option
-            if (this.gridOptionsWrapper.isSuppressScrollLag()) {
-                useScrollLag = false;
-            } else if (this.gridOptionsWrapper.getIsScrollLag()) {
-                useScrollLag = this.gridOptionsWrapper.getIsScrollLag()();
-            } else {
-                useScrollLag = _.isBrowserIE() || _.isBrowserSafari();
-            }
-            if (useScrollLag) {
-                this.scrollLagCounter++;
-                var scrollLagCounterCopy = this.scrollLagCounter;
-                setTimeout( ()=> {
-                    if (this.scrollLagCounter === scrollLagCounterCopy) {
-                        this.rowRenderer.drawVirtualRows();
-                    }
-                }, 50);
-            // all other browsers, afaik, are fine, so just do the redraw
-            } else {
-                this.rowRenderer.drawVirtualRows();
-            }
+            this.rowRenderer.drawAfterScroll();
+        }
+
+        private requestDrawColumns() {
+            this.rowRenderer.drawAfterScroll();
         }
 
         private scrollHeader(bodyLeftPosition: any) {
