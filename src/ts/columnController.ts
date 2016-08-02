@@ -624,9 +624,14 @@ module ag.grid {
             var bodyWidth = this.gridPanel.getBodyViewport().offsetWidth;
             for (var i = 0; i < columns.length; i++) {
                 offsets.push(offset);
-                var width = this.convertIfPercent(columns[i].colDef.width, bodyWidth);
-                columns[i].actualWidth = width;
-                offset += this.convertIfPercent(width, bodyWidth);
+                var width: any;
+                if (columns[i].sizedToFit) {
+                    width = columns[i].actualWidth;
+                } else {
+                    width = this.convertIfPercent(columns[i].colDef.width, bodyWidth);
+                    columns[i].actualWidth = width;
+                }
+                offset += width;
             }
 
             return offset;
@@ -697,11 +702,14 @@ module ag.grid {
                                 pixelsForLastCol -= newWidth;
                                 column.actualWidth = newWidth;
                             }
+                            column.sizedToFit = true;
                         }
                         this.updateGroupWidthsAfterColumnResize(column);
                     }
                 }
             }
+
+            this.updateDisplayedColumns();
 
             // widths set, refresh the gui
             colsToFireEventFor.forEach( (column: Column) => {
@@ -721,6 +729,17 @@ module ag.grid {
                 }
                 return result;
             }
+        }
+
+        public hasFittedColumns(): boolean {
+            var columns: Column[] = this.displayedColumns;
+            for (var i = 0; i < columns.length; i++) {
+                if (columns[i].sizedToFit) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private buildGroups() {
