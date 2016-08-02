@@ -703,6 +703,8 @@ module ag.grid {
                 }
             }
 
+            this.updateDisplayedColumns();
+
             // widths set, refresh the gui
             colsToFireEventFor.forEach( (column: Column) => {
                 var event = new ColumnChangeEvent(Events.EVENT_COLUMN_RESIZED).withColumn(column);
