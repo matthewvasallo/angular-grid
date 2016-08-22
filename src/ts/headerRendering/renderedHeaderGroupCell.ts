@@ -152,7 +152,7 @@ module ag.grid {
             eGroupCellLabel.appendChild(eGroupIcon);
 
             var that = this;
-            eGroupIcon.onclick = function() {
+            eGroupCellLabel.onclick = function() {
                 var newExpandedValue = !that.columnGroup.expanded;
                 that.columnController.columnGroupOpened(that.columnGroup, newExpandedValue);
             };
