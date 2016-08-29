@@ -10,6 +10,7 @@ module ag.grid {
 
         colDef: ColDef;
         actualWidth: any;
+        sizedToFit: boolean;
         visible: any;
         colId: any;
         pinned: boolean;
@@ -22,6 +23,7 @@ module ag.grid {
         constructor(colDef: ColDef, actualWidth: any) {
             this.colDef = colDef;
             this.actualWidth = actualWidth;
+            this.sizedToFit = false;
             this.visible = !colDef.hide;
             this.sort = colDef.sort;
             this.sortedAt = colDef.sortedAt;
