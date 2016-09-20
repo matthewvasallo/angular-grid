@@ -190,6 +190,16 @@ module ag.grid {
             return div;
         }
 
+        public adjustPositionIfNeed(left: number): void {
+            var currentStr = this.vGridCell.getStyle("left");
+            var current = new Number(currentStr.replace(/px/, ""));
+            if (current !== left) {
+                this.vGridCell.addStyles({
+                    left: left + "px"
+                });
+            }
+        }
+
         // called by rowRenderer when user navigates via tab key
         public startEditing(key?: number) {
             var that = this;

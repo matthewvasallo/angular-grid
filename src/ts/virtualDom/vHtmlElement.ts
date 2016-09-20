@@ -35,6 +35,18 @@ module ag.vdom {
             }
         }
 
+        public getStyle(key: string): string {
+            var value: string = null;
+            if (this.bound) {
+                var style = <any> this.element.style;
+                value = style[key];
+            } else {
+                value = this.style[key];
+            }
+
+            return value;
+        }
+
         public addStyles(styles: any): void {
             if (!styles) {
                 return;

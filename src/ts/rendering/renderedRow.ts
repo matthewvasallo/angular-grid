@@ -314,6 +314,16 @@ module ag.grid {
             this.renderedCells = {};
         }
 
+        public adjustForColumnResize(changedColumnIndex: number) {
+            var cells = this.renderedCells;
+            var that = this;
+            Object.keys(cells).forEach(function (columnIndex: any) {
+                if (columnIndex > changedColumnIndex) {
+                    cells[columnIndex].adjustPositionIfNeed(that.columnController.getOffsetForColumnIndex(columnIndex));
+                }
+            });
+        }
+
         private bindVirtualElement(vElement: ag.vdom.VHtmlElement): void {
             vElement.bind();
         }
