@@ -134,5 +134,6 @@ module ag.grid {
         headerHoverHandler?: Function;
         editWidth?: number;
         headerClickHandler?: Function;
+        confirmEditHandler?: Function;
     }
 }

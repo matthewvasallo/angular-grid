@@ -230,6 +230,7 @@ module ag.grid {
 
             var blurListener = function () {
                 var params = {
+                    endEdit: true,
                     abortIfInvalid: true
                 };
                 that.stopEditing(eInput, blurListener, params);
@@ -245,10 +246,7 @@ module ag.grid {
                 if (keyDefinition) {
                     var params = keyDefinition[event.shiftKey ? "shift" : "noShift"];
                     if (params) {
-                        var stopped = that.stopEditing(eInput, blurListener, params);
-                        if (stopped && ! (params.abortEdit || params.endEdit)) {
-                            that.rowRenderer.selectNextEditCellByParameters(that.rowIndex, that.column, params);
-                        }
+                        that.stopEditing(eInput, blurListener, params);
                     }
 
                     // we don't want the default action, so return false, this stops the event from bubbling
@@ -293,6 +291,11 @@ module ag.grid {
                 }
             }
 
+            if (colDef.confirmEditHandler && !params.editConfirmed && !params.abortEdit) {
+                this.callConfirmEdit(colDef.confirmEditHandler, eInput, blurListener, params, paramsForCallbacks);
+                return false;
+            }
+
             this.editingCell = false;
             this.rowRenderer.setEditInProgress(false);
             this.cellEnterExitHandler(false);
@@ -332,7 +335,29 @@ module ag.grid {
             }
             this.refreshCell();
 
+            if (!params.abortEdit && !params.endEdit) {
+                this.rowRenderer.selectNextEditCellByParameters(this.rowIndex, this.column, params);
+            }
+
             return true;
+        }
+
+        private callConfirmEdit(handler: any, eInput: any, blurHandler: any, editParams: any, paramsForCallbacks: any): void {
+            var that = this;
+            var confirmParams = _.cloneObject(editParams);
+            confirmParams.editConfirmed = true;
+            eInput.removeEventListener('blur', blurHandler);
+
+            var confirm = function() {
+                that.stopEditing(eInput, blurHandler, confirmParams);
+            };
+            var finish = function() {
+                eInput.addEventListener('blur', blurHandler);
+            };
+            paramsForCallbacks.confirmCallback = confirm;
+            paramsForCallbacks.finishCallback = finish;
+
+            handler(paramsForCallbacks);
         }
 
         private createParams(): any {
