@@ -355,11 +355,15 @@ module ag.grid {
             var confirm = function() {
                 that.stopEditing(eInput, confirmParams);
             };
+            var dismiss = function() {
+                eInput.focus();
+            }
             var finish = function() {
                 eInput.addEventListener('blur', that.blurListener);
                 eInput.addEventListener('keydown', that.keyListener);
             };
             paramsForCallbacks.confirmCallback = confirm;
+            paramsForCallbacks.dismissCallback = dismiss;
             paramsForCallbacks.finishCallback = finish;
 
             handler(paramsForCallbacks);
