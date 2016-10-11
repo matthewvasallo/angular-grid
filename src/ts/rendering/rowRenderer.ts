@@ -287,9 +287,13 @@ module ag.grid {
             this.drawVirtualRows();
         }
 
-        private refreshAllVirtualRows(fromIndex: any) {
+        private adjustWidthHolder() {
             // make sure the dummy div spans the entire width, so that scroll position is maintained.
             this.widthHolderDiv.style.width = this.columnModel.getBodyContainerWidth() + "px";
+        }
+
+        private refreshAllVirtualRows(fromIndex: any) {
+            this.adjustWidthHolder();
 
             // remove all current virtual rows, as they have old data
             var rowsToRemove = Object.keys(this.renderedRows);
@@ -437,6 +441,8 @@ module ag.grid {
         }
 
         public drawAfterScroll() {
+            this.adjustWidthHolder();
+
             // remove any rows we don't want anymore
             this.drawVirtualRows();
             // if there was horizontal motion, make sure rendering is in progress to notice it.
