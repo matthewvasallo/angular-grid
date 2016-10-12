@@ -40,7 +40,7 @@ module ag.grid {
         headerClass?: string | string[] | ((params: any) => string | string[]);
 
         /** Initial width, in pixels, of the cell */
-        width?: number;
+        width?: any;
 
         /** Min width, in pixels, of the cell */
         minWidth?: number;
@@ -134,5 +134,6 @@ module ag.grid {
         headerHoverHandler?: Function;
         editWidth?: number;
         headerClickHandler?: Function;
+        confirmEditHandler?: Function;
     }
 }

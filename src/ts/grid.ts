@@ -680,12 +680,13 @@ module ag.grid {
                 if (this.columnController.hasFittedColumns()) {
                     this.gridOptions.api.sizeColumnsToFit();
                 } else {
+                    if (this.columnController.hasPercentColumns()) {
+                        this.headerRenderer.refreshHeader();
+                    }
                     this.columnController.updateDisplayedColumns();
                 }
-                this.headerRenderer.refreshHeader();
                 this.rowRenderer.drawAfterScroll();
             }
         }
     }
 }
-

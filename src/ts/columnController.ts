@@ -742,6 +742,18 @@ module ag.grid {
             return false;
         }
 
+        public hasPercentColumns(): boolean {
+            var columns: Column[] = this.displayedColumns;
+            for (var i = 0; i < columns.length; i++) {
+                var width = columns[i].colDef.width;
+                if (typeof width === "string" && width.indexOf("%") > 0) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private buildGroups() {
             // if not grouping by headers, do nothing
             if (!this.gridOptionsWrapper.isGroupHeaders()) {

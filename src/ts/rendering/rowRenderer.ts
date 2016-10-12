@@ -92,14 +92,9 @@ module ag.grid {
         }
 
         public onIndividualColumnResized(column: Column) {
-            var newWidthPx = column.actualWidth + "px";
-            var selectorForAllColsInCell = ".cell-col-" + column.index;
-            this.eParentsOfRows.forEach( function(rowContainer: HTMLElement) {
-                var cellsForThisCol: NodeList = rowContainer.querySelectorAll(selectorForAllColsInCell);
-                for (var i = 0; i < cellsForThisCol.length; i++) {
-                    var element = <HTMLElement> cellsForThisCol[i];
-                    element.style.width = newWidthPx;
-                }
+            // re-implemented because the async rendering uses absolute positioning
+            Utils.iterateObject(this.renderedRows, function(key: String, renderedRow: RenderedRow) {
+                renderedRow.adjustForColumnResize(column.index);
             });
         }
 
@@ -292,9 +287,13 @@ module ag.grid {
             this.drawVirtualRows();
         }
 
-        private refreshAllVirtualRows(fromIndex: any) {
+        private adjustWidthHolder() {
             // make sure the dummy div spans the entire width, so that scroll position is maintained.
             this.widthHolderDiv.style.width = this.columnModel.getBodyContainerWidth() + "px";
+        }
+
+        private refreshAllVirtualRows(fromIndex: any) {
+            this.adjustWidthHolder();
 
             // remove all current virtual rows, as they have old data
             var rowsToRemove = Object.keys(this.renderedRows);
@@ -442,6 +441,8 @@ module ag.grid {
         }
 
         public drawAfterScroll() {
+            this.adjustWidthHolder();
+
             // remove any rows we don't want anymore
             this.drawVirtualRows();
             // if there was horizontal motion, make sure rendering is in progress to notice it.

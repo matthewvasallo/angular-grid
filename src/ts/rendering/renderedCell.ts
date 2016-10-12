@@ -47,6 +47,8 @@ module ag.grid {
 
         private value: any;
         private checkboxSelection: boolean;
+        private blurListener: Function = null;
+        private keyListener: Function = null;
 
         constructor(isFirstColumn: any, column: any, $compile: any, rowRenderer: RowRenderer,
                     gridOptionsWrapper: GridOptionsWrapper, expressionService: ExpressionService,
@@ -190,6 +192,16 @@ module ag.grid {
             return div;
         }
 
+        public adjustPositionIfNeed(left: number): void {
+            var currentStr = this.vGridCell.getStyle("left");
+            var current = new Number(currentStr.replace(/px/, ""));
+            if (current !== left) {
+                this.vGridCell.addStyles({
+                    left: left + "px"
+                });
+            }
+        }
+
         // called by rowRenderer when user navigates via tab key
         public startEditing(key?: number) {
             var that = this;
@@ -218,34 +230,33 @@ module ag.grid {
 
             this.makeEditCell().appendChild(nodeToAppend);
 
-            var blurListener = function () {
+             this.blurListener = function () {
                 var params = {
+                    endEdit: true,
                     abortIfInvalid: true
                 };
-                that.stopEditing(eInput, blurListener, params);
+                that.stopEditing(eInput, params);
             };
 
             //stop entering if we loose focus
-            eInput.addEventListener("blur", blurListener);
+            eInput.addEventListener("blur", this.blurListener);
 
             var customKeyMap = this.gridOptionsWrapper.getEditKeyMap();
-            eInput.addEventListener('keydown', function(event: any) {
+            this.keyListener = function(event: any) {
                 var key = event.which || event.keyCode;
                 var keyDefinition = customKeyMap[key] || Constants.DEFAULT_KEY_MAP[key];
                 if (keyDefinition) {
                     var params = keyDefinition[event.shiftKey ? "shift" : "noShift"];
                     if (params) {
-                        var stopped = that.stopEditing(eInput, blurListener, params);
-                        if (stopped && ! (params.abortEdit || params.endEdit)) {
-                            that.rowRenderer.selectNextEditCellByParameters(that.rowIndex, that.column, params);
-                        }
+                        that.stopEditing(eInput, params);
                     }
 
                     // we don't want the default action, so return false, this stops the event from bubbling
                     event.preventDefault();
                     return false;
                 }
-            });
+            };
+            eInput.addEventListener('keydown', this.keyListener);
 
             var colIndex = this.columnController.getDisplayedColIndex(this.column);
             if (colIndex >= 0) {
@@ -260,7 +271,7 @@ module ag.grid {
             this.rowRenderer.focusCell(this.vGridCell.getElement(), this.rowIndex, this.column.index, this.column.colDef, forceBrowserFocus);
         }
 
-        private stopEditing(eInput: any, blurListener: any, params: any): boolean {
+        private stopEditing(eInput: any, params: any): boolean {
             var newValue = eInput.value;
             var colDef = this.column.colDef;
             var paramsForCallbacks = {
@@ -283,13 +294,18 @@ module ag.grid {
                 }
             }
 
+            if (colDef.confirmEditHandler && !params.editConfirmed && !params.abortEdit) {
+                this.callConfirmEdit(colDef.confirmEditHandler, eInput, params, paramsForCallbacks);
+                return false;
+            }
+
             this.editingCell = false;
             this.rowRenderer.setEditInProgress(false);
             this.cellEnterExitHandler(false);
 
             //If we don't remove the blur listener first, we get:
             //Uncaught NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is no longer a child of this node. Perhaps it was moved in a 'blur' event handler?
-            eInput.removeEventListener('blur', blurListener);
+            eInput.removeEventListener('blur', this.blurListener);
 
             if (!params.abortEdit) {
 
@@ -322,7 +338,35 @@ module ag.grid {
             }
             this.refreshCell();
 
+            if (!params.abortEdit && !params.endEdit) {
+                this.rowRenderer.selectNextEditCellByParameters(this.rowIndex, this.column, params);
+            }
+
             return true;
+        }
+
+        private callConfirmEdit(handler: any, eInput: any, editParams: any, paramsForCallbacks: any): void {
+            var that = this;
+            var confirmParams = _.cloneObject(editParams);
+            confirmParams.editConfirmed = true;
+            eInput.removeEventListener('blur', this.blurListener);
+            eInput.removeEventListener('keydown', this.keyListener);
+
+            var confirm = function() {
+                that.stopEditing(eInput, confirmParams);
+            };
+            var dismiss = function() {
+                eInput.focus();
+            }
+            var finish = function() {
+                eInput.addEventListener('blur', that.blurListener);
+                eInput.addEventListener('keydown', that.keyListener);
+            };
+            paramsForCallbacks.confirmCallback = confirm;
+            paramsForCallbacks.dismissCallback = dismiss;
+            paramsForCallbacks.finishCallback = finish;
+
+            handler(paramsForCallbacks);
         }
 
         private createParams(): any {
