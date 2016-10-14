@@ -287,7 +287,7 @@ module ag.grid {
             this.drawVirtualRows();
         }
 
-        private adjustWidthHolder() {
+        public adjustWidthHolder() {
             // make sure the dummy div spans the entire width, so that scroll position is maintained.
             this.widthHolderDiv.style.width = this.columnModel.getBodyContainerWidth() + "px";
         }
