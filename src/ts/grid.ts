@@ -665,6 +665,8 @@ module ag.grid {
         public updateBodyContainerWidthAfterColResize() {
             this.rowRenderer.setMainRowWidths();
             this.gridPanel.setBodyContainerWidth();
+            // Cengage Addition: To update dummy div with body container.
+            this.rowRenderer.adjustWidthHolder();
         }
 
         public updatePinnedColContainerWidthAfterColResize() {
