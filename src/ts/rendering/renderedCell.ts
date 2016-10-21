@@ -351,13 +351,18 @@ module ag.grid {
             confirmParams.editConfirmed = true;
             eInput.removeEventListener('blur', this.blurListener);
             eInput.removeEventListener('keydown', this.keyListener);
+            eInput.blur();
 
             var confirm = function() {
                 that.stopEditing(eInput, confirmParams);
             };
             var dismiss = function() {
-                eInput.focus();
-            }
+                confirmParams.abortEdit = true;
+                that.stopEditing(eInput, confirmParams);
+                if (!editParams.endEdit) {
+                    that.rowRenderer.selectNextEditCellByParameters(that.rowIndex, that.column, editParams);
+                }
+            };
             var finish = function() {
                 eInput.addEventListener('blur', that.blurListener);
                 eInput.addEventListener('keydown', that.keyListener);
