@@ -49,6 +49,7 @@ module ag.grid {
         private eParentsOfRows: HTMLElement[];
         private widthHolderDiv: HTMLElement;
         private editLayerDiv: HTMLElement;
+        private tooltipLayerDiv: HTMLElement;
         private cellToBeEdited: any;
         private editInProgress: boolean;
 
@@ -159,6 +160,18 @@ module ag.grid {
             }
 
             return this.editLayerDiv;
+        }
+
+        public getTooltipLayer() : any {
+            if (! this.tooltipLayerDiv) {
+                var div = this.makeUtilityDiv();
+                (<any> div.style)["z-index"] = 200;
+                (<any> div.style)["top"] = 0;
+                (<any> div.style)["left"] = 0;
+                this.tooltipLayerDiv = div;
+            }
+
+            return this.tooltipLayerDiv;
         }
 
         public setRowPosition(element: any, rowIndex: number): void {

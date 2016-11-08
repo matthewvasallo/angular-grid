@@ -404,6 +404,19 @@ module ag.grid {
             return this.rowRenderer.editCellAtRowColumn(rowIndex, colIndex);
         }
 
+        public getTooltipLayer(): any {
+            return this.rowRenderer.getTooltipLayer();
+        }
+
+        public getCellTopLeft(rowIndex: any, colDef: any): any {
+            var result: any = {
+                top: this.gridOptionsWrapper.getRowHeight() * (rowIndex),
+                left: this.columnController.getOffsetForColDef(colDef)
+            };
+
+            return result;
+        }
+
         private getMappedRow(rowIndex: any) : RowNode {
             var model = this.grid.getRowModel();
             var mappedIndex = model.getMappedIndexFromOriginal(rowIndex);
