@@ -312,6 +312,10 @@ module ag.grid {
             this.rowModel = rowModel;
         }
 
+        public getOverallBody(): any {
+            return this.eBody;
+        }
+
         public getBodyContainer() {
             return this.eBodyContainer;
         }
