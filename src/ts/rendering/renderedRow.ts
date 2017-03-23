@@ -463,7 +463,7 @@ module ag.grid {
         }
 
         private createRowContainer() {
-            var vRow = new ag.vdom.VHtmlElement('tr');
+            var vRow = new ag.vdom.VHtmlElement('div');
             var that = this;
             vRow.addEventListener("click", function (event: any) {
                 var agEvent = that.createEvent(event, this);
