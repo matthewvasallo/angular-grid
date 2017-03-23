@@ -178,6 +178,7 @@ module ag.grid {
 
         private setupComponents(): void {
             this.eHeaderCell = document.createElement("div");
+            this.eHeaderCell.setAttribute("role", "columnheader");
 
             this.createScope();
             this.addClasses();
@@ -201,6 +202,7 @@ module ag.grid {
             // label div
             var headerCellLabel = document.createElement("div");
             headerCellLabel.className = "ag-header-cell-label";
+            headerCellLabel.setAttribute("role", "presentation");
 
             this.addHoverListener(headerCellLabel);
 
@@ -238,6 +240,7 @@ module ag.grid {
 
             this.refreshFilterIcon();
             this.refreshSortIcon();
+            this.eHeaderCell.setAttribute('role', 'columnheader');
         }
 
         private useRenderer(headerNameValue: string, headerCellRenderer: Function,

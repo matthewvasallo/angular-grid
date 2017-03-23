@@ -6,8 +6,8 @@ module ag.grid {
     var gridHtml =
             `<div>
                 <!-- header -->
-                <div class="ag-header">
-                    <div class="ag-pinned-header"></div><div class="ag-header-viewport"><div class="ag-header-container"></div></div>
+                <div class="ag-header" role="rowgroup">
+                    <div class="ag-pinned-header"></div><div class="ag-header-viewport" role="presentation"><div class="ag-header-container"></div></div>
                 </div>
                 <!-- floating top -->
                 <div class="ag-floating-top">
@@ -18,13 +18,13 @@ module ag.grid {
                     <div class="ag-pinned-floating-bottom"></div><div class="ag-floating-bottom-viewport"><div class="ag-floating-bottom-container"></div></div>
                 </div>
                 <!-- body -->
-                <div class="ag-body">
+                <div class="ag-body" role="rowgroup">
                     <div class="ag-pinned-cols-viewport">
                         <div class="ag-pinned-cols-container"></div>
                     </div>
-                    <div class="ag-body-viewport-wrapper">
-                        <div class="ag-body-viewport">
-                            <div class="ag-body-container"></div>
+                    <div class="ag-body-viewport-wrapper" role="presentation">
+                        <div class="ag-body-viewport" role="presentation">
+                            <table class="ag-body-container" role="presentation"></table>
                         </div>
                     </div>
                 </div>
@@ -134,6 +134,8 @@ module ag.grid {
             if (this.gridOptionsWrapper.isSuppressHorizontalScroll()) {
                 this.eBodyViewport.style.overflowX = 'hidden';
             }
+            this.eRoot.setAttribute("role", "grid");
+            this.eHeaderContainer.setAttribute("role", "row");
         }
 
         public getPinnedFloatingTop(): HTMLElement {

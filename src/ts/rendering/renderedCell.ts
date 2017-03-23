@@ -114,10 +114,12 @@ module ag.grid {
         }
 
         private setupComponents() {
-            this.vGridCell = new ag.vdom.VHtmlElement("div");
+            this.vGridCell = new ag.vdom.VHtmlElement("td");
             this.vGridCell.setAttribute("col", (this.column.index !== undefined && this.column.index !== null) ? this.column.index.toString() : '');
 
             this.vGridCell.setAttribute("colId", this.column.colId);
+
+            this.vGridCell.setAttribute("role", 'gridcell');
 
             // only set tab index if cell selection is enabled
             if (!this.gridOptionsWrapper.isSuppressCellSelection() && !this.node.floating) {

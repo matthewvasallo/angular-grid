@@ -103,6 +103,7 @@ module ag.grid {
             }
 
             this.vBodyRow.setAttribute('row', rowStr);
+            this.vBodyRow.setAttribute('role', "row");
             if (this.pinning) {
                 this.vPinnedRow.setAttribute('row', rowStr);
             }
@@ -394,6 +395,8 @@ module ag.grid {
                 _.addCssClass(eRow, 'ag-group-cell-entire-row');
             }
 
+            eRow.setAttribute("role", "gridcell");
+
             return eRow;
         }
 
@@ -460,7 +463,7 @@ module ag.grid {
         }
 
         private createRowContainer() {
-            var vRow = new ag.vdom.VHtmlElement('div');
+            var vRow = new ag.vdom.VHtmlElement('tr');
             var that = this;
             vRow.addEventListener("click", function (event: any) {
                 var agEvent = that.createEvent(event, this);
