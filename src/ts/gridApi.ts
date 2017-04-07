@@ -404,6 +404,10 @@ module ag.grid {
             return this.rowRenderer.editCellAtRowColumn(rowIndex, colIndex);
         }
 
+        public getTooltipLayer(): any {
+            return this.rowRenderer.getTooltipLayer();
+        }
+
         private getMappedRow(rowIndex: any) : RowNode {
             var model = this.grid.getRowModel();
             var mappedIndex = model.getMappedIndexFromOriginal(rowIndex);

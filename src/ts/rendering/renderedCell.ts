@@ -28,6 +28,7 @@ module ag.grid {
         private rowIndex: number;
         private editingCell: boolean;
         private editCell: any;
+        private currentClasses: string[] = [];
 
         private scope: any;
         private isFirstColumn: boolean = false;
@@ -351,13 +352,18 @@ module ag.grid {
             confirmParams.editConfirmed = true;
             eInput.removeEventListener('blur', this.blurListener);
             eInput.removeEventListener('keydown', this.keyListener);
+            eInput.blur();
 
             var confirm = function() {
                 that.stopEditing(eInput, confirmParams);
             };
             var dismiss = function() {
-                eInput.focus();
-            }
+                confirmParams.abortEdit = true;
+                that.stopEditing(eInput, confirmParams);
+                if (!editParams.endEdit) {
+                    that.rowRenderer.selectNextEditCellByParameters(that.rowIndex, that.column, editParams);
+                }
+            };
             var finish = function() {
                 eInput.addEventListener('blur', that.blurListener);
                 eInput.addEventListener('keydown', that.keyListener);
@@ -513,13 +519,46 @@ module ag.grid {
             }
         }
 
+        private addTOClassList(classList: string[], toAdd: any): void {
+            if (!toAdd || toAdd === "") {
+                return;
+            }
+
+            var addClass = <Function> (item: string) => {
+                    classList.push(item);
+            };
+            if (Array.isArray(toAdd)) {
+                toAdd.forEach(addClass);
+            } else {
+                toAdd.split(' ').forEach(addClass);
+            }
+        }
+
         private populateCell() {
+            var newClasses: string[] = [];
             // populate
             this.putDataIntoCell();
             // style
             this.addStylesFromCollDef();
-            this.addClassesFromCollDef();
-            this.addClassesFromRules();
+            this.addClassesFromCollDef(newClasses);
+            this.addClassesFromRules(newClasses);
+
+            this.updateClasses(newClasses);
+        }
+
+        private updateClasses(newClasses: string[]) {
+            this.currentClasses.forEach((className: string) => {
+                if (newClasses.indexOf(className) < 0) {
+                    this.vGridCell.removeClass(className);
+                }
+            });
+            newClasses.forEach((className: string) => {
+                if (this.currentClasses.indexOf(className) < 0) {
+                    this.vGridCell.addClass(className);
+                }
+            });
+
+            this.currentClasses = newClasses;
         }
 
         private addStylesFromCollDef() {
@@ -549,7 +588,7 @@ module ag.grid {
             }
         }
 
-        private addClassesFromCollDef() {
+        private addClassesFromCollDef(classList: string[]) {
             var colDef = this.column.colDef;
             if (colDef.cellClass) {
               var classToUse: any;
@@ -570,17 +609,11 @@ module ag.grid {
                     classToUse = colDef.cellClass;
                 }
 
-                if (typeof classToUse === 'string') {
-                    this.vGridCell.addClass(classToUse);
-                } else if (Array.isArray(classToUse)) {
-                    classToUse.forEach( (cssClassItem: string)=> {
-                        this.vGridCell.addClass(cssClassItem);
-                    });
-                }
+                this.addTOClassList(classList, classToUse);
             }
         }
 
-        private addClassesFromRules() {
+        private addClassesFromRules(classList: string[]) {
             var colDef = this.column.colDef;
             var classRules = colDef.cellClassRules;
             if (typeof classRules === 'object' && classRules !== null) {
@@ -606,9 +639,7 @@ module ag.grid {
                         resultOfRule = rule(params);
                     }
                     if (resultOfRule) {
-                        this.vGridCell.addClass(className);
-                    } else {
-                        this.vGridCell.removeClass(className);
+                        this.addTOClassList(classList, className);
                     }
                 }
             }
