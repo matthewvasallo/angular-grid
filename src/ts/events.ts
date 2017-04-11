@@ -47,6 +47,7 @@ module ag.grid {
 
         // Cengage additions
         public static EVENT_VIRTUAL_ROWS_ADDED = 'virtualRowsAdded';
+        public static EVENT_RENDERING_COMPLETE = 'renderingComplete';
     }
 
 }

@@ -63,6 +63,7 @@ module ag.grid {
                 this.inProgress = false;
                 // catch up with angular when we're done.
                 this.rowRenderer.doAngularAppy();
+                this.eventService.dispatchEvent(Events.EVENT_RENDERING_COMPLETE, {});
             }
         }
 
