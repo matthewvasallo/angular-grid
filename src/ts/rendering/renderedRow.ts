@@ -219,7 +219,7 @@ module ag.grid {
         // Cengage additions
         public drawPinnedAndColumnRange(left: number, right: number, maxToRender: number) : number {
             if (this.rowIsHeaderThatSpans) {
-                return 1;
+                return 0;
             }
 
             var renderedCount = this.drawCellRange(0, this.gridOptionsWrapper.getPinnedColCount(), maxToRender);
