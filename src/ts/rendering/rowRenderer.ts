@@ -408,6 +408,9 @@ module ag.grid {
             if (rowsNeeded) {
                 // make sure async rendering is running
                 this.asyncRenderer.startIfNeeded();
+            } else {
+                this.eventService.dispatchEvent(Events.EVENT_RENDERING_COMPLETE, {});
+
             }
             // if we are doing angular compiling, then do digest the scope here
             //if (this.gridOptionsWrapper.isAngularCompileRows()) {
