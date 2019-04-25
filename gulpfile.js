@@ -85,7 +85,7 @@ function tsDebugTask() {
         .pipe(sourcemaps.write()) // for sourcemaps only
         .pipe(rename('ag-grid.js'))
         .pipe(gulp.dest('./docs/dist'))
-        .pipe(gulp.dest('../mindapp-progress/client/src/app/support'));
+        .pipe(gulp.dest('../mindtap-gradebook-client/src/app/support'));
 }
 
 // does TS compiling, sourcemaps = no, minification = yes, distFolder = yes
@@ -117,7 +117,7 @@ function tsReleaseTask() {
             .pipe(rename('ag-grid.min.js'))
             .pipe(gulp.dest('./dist'))
             .pipe(gulp.dest('./docs/dist'))
-            .pipe(gulp.dest('../mindapp-progress/client/src/app/support'))
+            .pipe(gulp.dest('../mindtap-gradebook-client/src/app/support'))
     ]);
 }
 
