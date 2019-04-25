@@ -546,8 +546,9 @@ module ag.grid {
             var offsets = this.columnOffsets;
             while (last-first > 6) {
                 var mid = Math.floor((last+first) / 2);
-                if (offsets[mid] < target) {
-                    first = mid;
+                // important to use <= here; if target === offsets[mid], the entry we're interested in is the next one
+                if (offsets[mid] <= target) {
+                    first = mid + 1;
                 } else {
                     last = mid;
                 }
